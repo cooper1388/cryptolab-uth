@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTH CryptoLab - Cryptography for Everybody</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark: #0a3d0a;
+    --green-mid: #1a6b1a;
+    --green-bright: #2ea82e;
+    --green-accent: #4dda4d;
+    --gold: #c8a800;
+    --gold-light: #f0cc00;
+    --bg: #0d0d0d;
+    --bg-panel: #111;
+    --bg-card: #161616;
+    --bg-input: #0a0a0a;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --red: #e04444;
+    --blue: #4488ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0a2a0a 0%, #0d3d0d 40%, #0a2a0a 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8), 0 0 40px rgba(46,168,46,0.1);
+  }
+
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  /* SVG UTH Logo */
+  .uth-logo-svg {
+    width: 52px;
+    height: 52px;
+    filter: drop-shadow(0 0 8px rgba(46,168,46,0.4));
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header-title .main {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--green-accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .header-title .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gold-light);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .header-nav {
+    display: flex;
+    gap: 6px;
+  }
+
+  .header-nav button {
+    background: rgba(46,168,46,0.08);
+    border: 1px solid rgba(46,168,46,0.25);
+    color: var(--text-dim);
+    padding: 8px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+
+  .header-nav button:hover {
+    background: rgba(46,168,46,0.18);
+    color: var(--green-accent);
+    border-color: var(--green-bright);
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+  }
+
+  /* KEY TYPE SELECTOR */
+  .key-type-section {
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .key-type-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .key-tab {
+    background: var(--bg-card);
+    border: none;
+    color: var(--text-dim);
+    padding: 14px 20px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .key-tab .tab-name { font-size: 1rem; font-weight: 700; }
+  .key-tab .tab-type { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 1px; }
+
+  .key-tab.active {
+    background: var(--green-dark);
+    color: var(--green-accent);
+    border-bottom: 2px solid var(--green-bright);
+  }
+
+  .key-tab.active .tab-type { color: var(--gold-light); }
+
+  .key-tab:hover:not(.active) {
+    background: #1a1a1a;
+    color: var(--text);
+  }
+
+  /* PANELS */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .panel:hover { border-color: #333; }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    background: linear-gradient(90deg, rgba(46,168,46,0.05), transparent);
+  }
+
+  .panel-header:hover { background: linear-gradient(90deg, rgba(46,168,46,0.1), transparent); }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .panel-title .icon { font-size: 1.1rem; }
+
+  .panel-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 400;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .panel-chevron {
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+  }
+
+  .panel.open .panel-chevron { transform: rotate(180deg); }
+
+  .panel-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .panel.open .panel-body { display: block; }
+
+  /* FORM ELEMENTS */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  select, input[type="text"], textarea {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  select:focus, input[type="text"]:focus, textarea:focus {
+    border-color: var(--green-bright);
+    box-shadow: 0 0 0 2px rgba(46,168,46,0.15);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 90px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .code-block {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--green-accent);
+    min-height: 60px;
+    word-break: break-all;
+    line-height: 1.6;
+    position: relative;
+    white-space: pre-wrap;
+  }
+
+  .code-block.command-block {
+    color: #7dd67d;
+    background: #050f05;
+    border-color: #1a3a1a;
+  }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border-radius: 5px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--green-mid), var(--green-dark));
+    color: #fff;
+    border: 1px solid var(--green-bright);
+    box-shadow: 0 2px 10px rgba(46,168,46,0.3);
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--green-bright), var(--green-mid));
+    box-shadow: 0 4px 20px rgba(46,168,46,0.5);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: #1a1a1a;
+    color: var(--text);
+    border-color: #444;
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid rgba(224,68,68,0.3);
+  }
+  .btn-danger:hover { background: rgba(224,68,68,0.1); }
+
+  /* OUTPUT AREA */
+  .output-wrapper {
+    position: relative;
+  }
+
+  .copy-btn-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(46,168,46,0.15);
+    border: 1px solid rgba(46,168,46,0.3);
+    color: var(--green-accent);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  .copy-btn-overlay:hover { background: rgba(46,168,46,0.3); }
+
+  /* CHECKBOX ROW */
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .checkbox-row input[type="checkbox"] { accent-color: var(--green-bright); width: 15px; height: 15px; }
+
+  .radio-group {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+  }
+
+  .radio-group input[type="radio"] { accent-color: var(--green-bright); }
+
+  /* STATUS / ALERT */
+  .status-bar {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    display: none;
+  }
+
+  .status-bar.success { background: rgba(46,168,46,0.12); border: 1px solid rgba(46,168,46,0.35); color: var(--green-accent); }
+  .status-bar.error { background: rgba(224,68,68,0.1); border: 1px solid rgba(224,68,68,0.35); color: var(--red); }
+  .status-bar.info { background: rgba(68,136,238,0.1); border: 1px solid rgba(68,136,238,0.3); color: var(--blue); }
+  .status-bar.show { display: block; }
+
+  /* SPINNER */
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* BADGE */
+  .badge {
+    background: rgba(200,168,0,0.15);
+    border: 1px solid rgba(200,168,0,0.4);
+    color: var(--gold-light);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge.green {
+    background: rgba(46,168,46,0.1);
+    border-color: rgba(46,168,46,0.3);
+    color: var(--green-accent);
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  /* TABS inside panel */
+  .inner-tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inner-tab {
+    padding: 8px 18px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+
+  .inner-tab.active {
+    color: var(--green-accent);
+    border-bottom-color: var(--green-bright);
+  }
+
+  .inner-tab:hover:not(.active) { color: var(--text); }
+
+  .inner-content { display: none; padding-top: 14px; }
+  .inner-content.active { display: block; }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+    letter-spacing: 1px;
+  }
+
+  footer span { color: var(--green-bright); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .form-row { grid-template-columns: 1fr; }
+    .key-type-tabs { grid-template-columns: 1fr 1fr; }
+    .header-title .main { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-logo">
+    <!-- UTH Logo SVG (laurel wreath + UTH letters) -->
+    <svg class="uth-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Laurel wreath -->
+      <g fill="#c8a800" opacity="0.9">
+        <!-- Left side leaves -->
+        <ellipse cx="12" cy="50" rx="6" ry="3" transform="rotate(-30 12 50)"/>
+        <ellipse cx="15" cy="38" rx="6" ry="3" transform="rotate(-50 15 38)"/>
+        <ellipse cx="22" cy="28" rx="6" ry="3" transform="rotate(-70 22 28)"/>
+        <ellipse cx="32" cy="20" rx="6" ry="3" transform="rotate(-85 32 20)"/>
+        <ellipse cx="18" cy="62" rx="6" ry="3" transform="rotate(-10 18 62)"/>
+        <ellipse cx="16" cy="73" rx="6" ry="3" transform="rotate(15 16 73)"/>
+        <!-- Right side leaves -->
+        <ellipse cx="88" cy="50" rx="6" ry="3" transform="rotate(30 88 50)"/>
+        <ellipse cx="85" cy="38" rx="6" ry="3" transform="rotate(50 85 38)"/>
+        <ellipse cx="78" cy="28" rx="6" ry="3" transform="rotate(70 78 28)"/>
+        <ellipse cx="68" cy="20" rx="6" ry="3" transform="rotate(85 68 20)"/>
+        <ellipse cx="82" cy="62" rx="6" ry="3" transform="rotate(10 82 62)"/>
+        <ellipse cx="84" cy="73" rx="6" ry="3" transform="rotate(-15 84 73)"/>
+        <!-- Bottom cross stems -->
+        <rect x="38" y="82" width="8" height="12" rx="2" transform="rotate(-20 38 82)"/>
+        <rect x="56" y="82" width="8" height="12" rx="2" transform="rotate(20 56 82)"/>
+      </g>
+      <!-- UTH Text -->
+      <text x="50" y="68" text-anchor="middle" font-family="Rajdhani, sans-serif" font-weight="900"
+            font-size="32" fill="url(#gUTH)" letter-spacing="1">UTH</text>
+      <!-- Stripes overlay on text -->
+      <clipPath id="textClip">
+        <text x="50" y="68" text-anchor="middle" font-family="Rajdhani, sans-serif" font-weight="900" font-size="32" letter-spacing="1">UTH</text>
+      </clipPath>
+      <g clip-path="url(#textClip)">
+        <rect x="5" y="40" width="90" height="2" fill="rgba(0,0,0,0.4)"/>
+        <rect x="5" y="46" width="90" height="2" fill="rgba(0,0,0,0.4)"/>
+        <rect x="5" y="52" width="90" height="2" fill="rgba(0,0,0,0.4)"/>
+        <rect x="5" y="58" width="90" height="2" fill="rgba(0,0,0,0.4)"/>
+      </g>
+      <defs>
+        <linearGradient id="gUTH" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#111"/>
+          <stop offset="40%" stop-color="#2ea82e"/>
+          <stop offset="100%" stop-color="#1a6b1a"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="header-title">
+      <div class="main">UTH CryptoLab</div>
+      <div class="sub">Cryptography for Everybody</div>
+    </div>
+  </div>
+  <div class="header-nav">
+    <button onclick="showInfo()">📘 About</button>
+    <button onclick="toggleTheme()">🌗 Theme</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- KEY TYPE TABS -->
+  <div class="key-type-section">
+    <div class="section-label">⚙ Key type</div>
+    <div class="key-type-tabs">
+      <button class="key-tab active" onclick="setKeyType(this,'RSA')">
+        <span class="tab-name">RSA</span>
+        <span class="tab-type">Classical</span>
+      </button>
+      <button class="key-tab" onclick="setKeyType(this,'EC')">
+        <span class="tab-name">Elliptic Curves</span>
+        <span class="tab-type">Classical</span>
+      </button>
+      <button class="key-tab" onclick="setKeyType(this,'ML-KEM')">
+        <span class="tab-name">ML-KEM</span>
+        <span class="tab-type badge">Post-Quantum</span>
+      </button>
+      <button class="key-tab" onclick="setKeyType(this,'ML-DSA')">
+        <span class="tab-name">ML-DSA</span>
+        <span class="tab-type badge">Post-Quantum</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GENERATE PRIVATE KEY -->
+  <div class="panel open" id="panel-keygen">
+    <div class="panel-header" onclick="togglePanel('panel-keygen')">
+      <div>
+        <div class="panel-title"><span class="icon">🔑</span> Generate Key Pair</div>
+        <div class="panel-subtitle">Generate a new private key of the selected type</div>
+      </div>
+      <div class="panel-chevron">▲</div>
+    </div>
+    <div class="panel-body">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Key length / Security level</label>
+          <select id="keyLength" onchange="updateCommand()">
+            <option value="1024">1024 bits</option>
+            <option value="2048" selected>2048 bits</option>
+            <option value="4096">4096 bits</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Output file name</label>
+          <input type="text" id="outFileName" value="key-2048" oninput="updateCommand()">
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="encryptKey">
+        <label for="encryptKey" style="text-transform:none;letter-spacing:0.5px;color:var(--text-dim)">Encrypt private key with passphrase:</label>
+        <input type="text" id="passphrase" placeholder="Enter passphrase..." style="max-width:220px;padding:6px 10px;font-size:0.8rem" oninput="updateCommand()">
+        <select id="cipherSel" style="max-width:150px;padding:6px 10px;font-size:0.8rem" onchange="updateCommand()">
+          <option value="">Not encrypting</option>
+          <option value="aes-128-cbc">AES-128-CBC</option>
+          <option value="aes-256-cbc">AES-256-CBC</option>
+          <option value="des3">3DES</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <label>OpenSSL Command</label>
+        <div class="code-block command-block" id="keygen-cmd">openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateKey()"><span>▶</span> Generate</button>
+        <button class="btn btn-secondary" onclick="copyText('keygen-output')">📋 Copy Key</button>
+        <button class="btn btn-secondary" onclick="downloadKey()">⬇ Download PEM</button>
+        <button class="btn btn-danger" onclick="resetPanel('keygen')">↺ Reset</button>
+      </div>
+
+      <div class="status-bar" id="keygen-status"></div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Generated Key Output</label>
+        <div class="output-wrapper">
+          <div class="code-block" id="keygen-output" style="min-height:100px;color:#7dd67d">— run Generate to produce a key —</div>
+          <button class="copy-btn-overlay" onclick="copyText('keygen-output')">COPY</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- EXTRACT PUBLIC KEY -->
+  <div class="panel" id="panel-pubkey">
+    <div class="panel-header" onclick="togglePanel('panel-pubkey')">
+      <div>
+        <div class="panel-title"><span class="icon">🔓</span> Extract Public Key</div>
+        <div class="panel-subtitle">Extract public key from private key</div>
+      </div>
+      <div class="panel-chevron">▼</div>
+    </div>
+    <div class="panel-body">
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>Private Key (PEM)</label>
+          <textarea id="privkey-input" placeholder="Paste your private key here (-----BEGIN PRIVATE KEY-----)..."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="extractPubKey()"><span>▶</span> Extract</button>
+        <button class="btn btn-secondary" onclick="copyText('pubkey-output')">📋 Copy</button>
+        <button class="btn btn-danger" onclick="resetPubKey()">↺ Reset</button>
+      </div>
+
+      <div class="status-bar" id="pubkey-status"></div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Public Key Output</label>
+        <div class="output-wrapper">
+          <div class="code-block" id="pubkey-output" style="min-height:80px">— paste a private key above and click Extract —</div>
+          <button class="copy-btn-overlay" onclick="copyText('pubkey-output')">COPY</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ENCRYPT / DECRYPT -->
+  <div class="panel" id="panel-enc">
+    <div class="panel-header" onclick="togglePanel('panel-enc')">
+      <div>
+        <div class="panel-title"><span class="icon">🔒</span> Encrypt / Decrypt</div>
+        <div class="panel-subtitle">Encrypt or decrypt a message using RSA / symmetric ciphers</div>
+      </div>
+      <div class="panel-chevron">▼</div>
+    </div>
+    <div class="panel-body">
+
+      <div class="inner-tabs">
+        <button class="inner-tab active" onclick="switchInner('enc','encrypt')">Encrypt</button>
+        <button class="inner-tab" onclick="switchInner('enc','decrypt')">Decrypt</button>
+        <button class="inner-tab" onclick="switchInner('enc','sym')">Symmetric (AES)</button>
+      </div>
+
+      <!-- ENCRYPT TAB -->
+      <div class="inner-content active" id="enc-encrypt">
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Plaintext Message</label>
+            <textarea id="enc-plaintext" placeholder="Enter the message to encrypt..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Recipient Public Key (PEM)</label>
+            <textarea id="enc-pubkey" placeholder="-----BEGIN PUBLIC KEY-----..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Padding</label>
+            <select id="enc-padding">
+              <option value="oaep">OAEP (Recommended)</option>
+              <option value="pkcs1">PKCS#1 v1.5</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Hash (for OAEP)</label>
+            <select id="enc-hash">
+              <option value="SHA-256">SHA-256</option>
+              <option value="SHA-1">SHA-1</option>
+              <option value="SHA-384">SHA-384</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="encryptMsg()">▶ Encrypt</button>
+          <button class="btn btn-secondary" onclick="copyText('enc-output')">📋 Copy</button>
+          <button class="btn btn-danger" onclick="document.getElementById('enc-plaintext').value='';document.getElementById('enc-output').textContent='—'">↺ Reset</button>
+        </div>
+        <div class="status-bar" id="enc-status"></div>
+        <div class="form-group" style="margin-top:14px">
+          <label>Ciphertext (Base64)</label>
+          <div class="output-wrapper">
+            <div class="code-block" id="enc-output" style="min-height:80px">—</div>
+            <button class="copy-btn-overlay" onclick="copyText('enc-output')">COPY</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DECRYPT TAB -->
+      <div class="inner-content" id="enc-decrypt">
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Ciphertext (Base64)</label>
+            <textarea id="dec-ciphertext" placeholder="Paste base64-encoded ciphertext..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Private Key (PEM)</label>
+            <textarea id="dec-privkey" placeholder="-----BEGIN PRIVATE KEY-----..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Padding</label>
+            <select id="dec-padding">
+              <option value="oaep">OAEP (Recommended)</option>
+              <option value="pkcs1">PKCS#1 v1.5</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="decryptMsg()">▶ Decrypt</button>
+          <button class="btn btn-secondary" onclick="copyText('dec-output')">📋 Copy</button>
+          <button class="btn btn-danger" onclick="document.getElementById('dec-ciphertext').value='';document.getElementById('dec-output').textContent='—'">↺ Reset</button>
+        </div>
+        <div class="status-bar" id="dec-status"></div>
+        <div class="form-group" style="margin-top:14px">
+          <label>Decrypted Plaintext</label>
+          <div class="output-wrapper">
+            <div class="code-block" id="dec-output" style="min-height:80px;color:#7dd67d">—</div>
+            <button class="copy-btn-overlay" onclick="copyText('dec-output')">COPY</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYMMETRIC AES TAB -->
+      <div class="inner-content" id="enc-sym">
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Message</label>
+            <textarea id="sym-msg" placeholder="Enter message..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Password / Key</label>
+            <input type="text" id="sym-key" placeholder="Enter password...">
+          </div>
+          <div class="form-group">
+            <label>Mode</label>
+            <select id="sym-mode">
+              <option value="encrypt">Encrypt</option>
+              <option value="decrypt">Decrypt</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Algorithm</label>
+            <select id="sym-algo">
+              <option value="AES-GCM">AES-256-GCM</option>
+              <option value="AES-CBC">AES-256-CBC</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="symCrypt()">▶ Run</button>
+          <button class="btn btn-secondary" onclick="copyText('sym-output')">📋 Copy</button>
+        </div>
+        <div class="status-bar" id="sym-status"></div>
+        <div class="form-group" style="margin-top:14px">
+          <label>Output</label>
+          <div class="output-wrapper">
+            <div class="code-block" id="sym-output" style="min-height:80px">—</div>
+            <button class="copy-btn-overlay" onclick="copyText('sym-output')">COPY</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SIGN / VERIFY -->
+  <div class="panel" id="panel-sign">
+    <div class="panel-header" onclick="togglePanel('panel-sign')">
+      <div>
+        <div class="panel-title"><span class="icon">✍️</span> Sign / Verify</div>
+        <div class="panel-subtitle">Create and verify digital signatures</div>
+      </div>
+      <div class="panel-chevron">▼</div>
+    </div>
+    <div class="panel-body">
+
+      <div class="inner-tabs">
+        <button class="inner-tab active" onclick="switchInner('sign','sign-tab')">Sign</button>
+        <button class="inner-tab" onclick="switchInner('sign','verify-tab')">Verify</button>
+      </div>
+
+      <div class="inner-content active" id="sign-sign-tab">
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Message to Sign</label>
+            <textarea id="sign-msg" placeholder="Enter the message to sign..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Private Key (PEM)</label>
+            <textarea id="sign-privkey" placeholder="-----BEGIN PRIVATE KEY-----..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Hash Algorithm</label>
+            <select id="sign-hash">
+              <option value="SHA-256">SHA-256</option>
+              <option value="SHA-384">SHA-384</option>
+              <option value="SHA-512">SHA-512</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Signature Format</label>
+            <select id="sign-fmt">
+              <option value="pkcs1v15">PKCS#1 v1.5 (RSA)</option>
+              <option value="pss">PSS (RSA-PSS)</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="signMsg()">▶ Sign</button>
+          <button class="btn btn-secondary" onclick="copyText('sign-output')">📋 Copy Signature</button>
+        </div>
+        <div class="status-bar" id="sign-status"></div>
+        <div class="form-group" style="margin-top:14px">
+          <label>Signature (Base64)</label>
+          <div class="output-wrapper">
+            <div class="code-block" id="sign-output" style="min-height:80px">—</div>
+            <button class="copy-btn-overlay" onclick="copyText('sign-output')">COPY</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="inner-content" id="sign-verify-tab">
+        <div class="form-row">
+          <div class="form-group full">
+            <label>Original Message</label>
+            <textarea id="verify-msg" placeholder="Enter the original message..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Signature (Base64)</label>
+            <textarea id="verify-sig" placeholder="Paste the signature..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Public Key (PEM)</label>
+            <textarea id="verify-pubkey" placeholder="-----BEGIN PUBLIC KEY-----..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Hash Algorithm</label>
+            <select id="verify-hash">
+              <option value="SHA-256">SHA-256</option>
+              <option value="SHA-384">SHA-384</option>
+              <option value="SHA-512">SHA-512</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="verifyMsg()">▶ Verify</button>
+        </div>
+        <div class="status-bar" id="verify-status"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HASH -->
+  <div class="panel" id="panel-hash">
+    <div class="panel-header" onclick="togglePanel('panel-hash')">
+      <div>
+        <div class="panel-title"><span class="icon">#</span> Hash / Digest</div>
+        <div class="panel-subtitle">Compute cryptographic hash of a message</div>
+      </div>
+      <div class="panel-chevron">▼</div>
+    </div>
+    <div class="panel-body">
+      <div class="form-row">
+        <div class="form-group full">
+          <label>Input Message</label>
+          <textarea id="hash-input" placeholder="Enter text to hash..." oninput="liveHash()"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Hash Algorithm</label>
+          <select id="hash-algo" onchange="liveHash()">
+            <option value="SHA-1">SHA-1</option>
+            <option value="SHA-256" selected>SHA-256</option>
+            <option value="SHA-384">SHA-384</option>
+            <option value="SHA-512">SHA-512</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Output Encoding</label>
+          <select id="hash-enc" onchange="liveHash()">
+            <option value="hex">Hexadecimal</option>
+            <option value="b64">Base64</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="liveHash()">▶ Hash</button>
+        <button class="btn btn-secondary" onclick="copyText('hash-output')">📋 Copy</button>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Hash Output</label>
+        <div class="output-wrapper">
+          <div class="code-block" id="hash-output" style="color:#aaddff;word-break:break-all">—</div>
+          <button class="copy-btn-overlay" onclick="copyText('hash-output')">COPY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>UTH CryptoLab &mdash; <span>Universidad Tecnológica de Honduras</span> &mdash; All operations run locally in your browser</p>
+  <p style="margin-top:6px;opacity:0.5">Powered by Web Crypto API &bull; No data leaves your device</p>
+</footer>
+
+<script>
+// ================= STATE =================
+let currentKeyType = 'RSA';
+let generatedPrivateKey = null;
+let generatedPublicKey = null;
+
+// ================= KEY TYPE =================
+function setKeyType(btn, type) {
+  document.querySelectorAll('.key-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  currentKeyType = type;
+  updateCommand();
+  // Adjust key lengths
+  const sel = document.getElementById('keyLength');
+  sel.innerHTML = '';
+  if (type === 'RSA') {
+    [['1024','1024 bits'],['2048','2048 bits'],['4096','4096 bits']].forEach(([v,l])=>{
+      const o = new Option(l,v); if(v==='2048') o.selected=true; sel.appendChild(o);
+    });
+  } else if (type === 'EC') {
+    [['P-256','P-256 (secp256r1)'],['P-384','P-384'],['P-521','P-521']].forEach(([v,l])=>{
+      const o = new Option(l,v); if(v==='P-256') o.selected=true; sel.appendChild(o);
+    });
+  } else if (type === 'ML-KEM') {
+    [['512','ML-KEM-512'],['768','ML-KEM-768'],['1024','ML-KEM-1024']].forEach(([v,l])=>{
+      const o = new Option(l,v); if(v==='768') o.selected=true; sel.appendChild(o);
+    });
+  } else {
+    [['44','ML-DSA-44'],['65','ML-DSA-65'],['87','ML-DSA-87']].forEach(([v,l])=>{
+      const o = new Option(l,v); if(v==='65') o.selected=true; sel.appendChild(o);
+    });
+  }
+  updateCommand();
+}
+
+// ================= COMMAND PREVIEW =================
+function updateCommand() {
+  const len = document.getElementById('keyLength').value;
+  const cipher = document.getElementById('cipherSel').value;
+  const pass = document.getElementById('passphrase').value;
+  let cmd = '';
+  if (currentKeyType === 'RSA') {
+    cmd = `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:${len}`;
+    if (cipher && pass) cmd += ` -${cipher} -pass pass:${pass}`;
+  } else if (currentKeyType === 'EC') {
+    cmd = `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:${len}`;
+    if (cipher && pass) cmd += ` -${cipher} -pass pass:${pass}`;
+  } else if (currentKeyType === 'ML-KEM') {
+    cmd = `openssl genpkey -algorithm ML-KEM-${len}`;
+  } else {
+    cmd = `openssl genpkey -algorithm ML-DSA-${len}`;
+  }
+  document.getElementById('keygen-cmd').textContent = cmd;
+}
+
+// ================= GENERATE KEY =================
+async function generateKey() {
+  showStatus('keygen-status', 'info', '⏳ Generating key pair...');
+  const len = document.getElementById('keyLength').value;
+  const outEl = document.getElementById('keygen-output');
+
+  try {
+    let keyPair;
+    if (currentKeyType === 'RSA') {
+      keyPair = await crypto.subtle.generateKey(
+        { name: 'RSA-OAEP', modulusLength: parseInt(len), publicExponent: new Uint8Array([1,0,1]), hash: 'SHA-256' },
+        true, ['encrypt','decrypt']
+      );
+    } else if (currentKeyType === 'EC') {
+      keyPair = await crypto.subtle.generateKey(
+        { name: 'ECDH', namedCurve: len }, true, ['deriveKey','deriveBits']
+      );
+    } else {
+      // Simulate post-quantum (Web Crypto doesn't support ML-KEM/DSA yet)
+      outEl.textContent = simulatePostQuantumKey(currentKeyType, len);
+      showStatus('keygen-status','success','✅ Post-Quantum key simulated (ML algorithms not yet supported in browsers — this is a demo representation)');
+      return;
+    }
+
+    const privKeyExport = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+    const pubKeyExport = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    generatedPrivateKey = keyPair.privateKey;
+    generatedPublicKey = keyPair.publicKey;
+
+    const privPem = arrayBufferToPem(privKeyExport, 'PRIVATE KEY');
+    const pubPem = arrayBufferToPem(pubKeyExport, 'PUBLIC KEY');
+
+    outEl.textContent = privPem + '\n' + pubPem;
+    // Store both for use in other panels
+    window._lastPrivPem = privPem;
+    window._lastPubPem = pubPem;
+
+    showStatus('keygen-status','success','✅ Key pair generated successfully!');
+  } catch(e) {
+    showStatus('keygen-status','error','❌ Error: ' + e.message);
+  }
+}
+
+function simulatePostQuantumKey(type, len) {
+  const bytes = new Uint8Array(64);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `-----BEGIN ${type} PRIVATE KEY-----\n` +
+    `(${type}-${len} — Post-Quantum key generation is not yet supported in browsers)\n` +
+    `Simulated key material: ${hex}\n` +
+    `-----END ${type} PRIVATE KEY-----`;
+}
+
+function downloadKey() {
+  const content = document.getElementById('keygen-output').textContent;
+  if (content.startsWith('—')) return;
+  const blob = new Blob([content], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (document.getElementById('outFileName').value || 'key') + '.pem';
+  a.click();
+}
+
+// ================= EXTRACT PUBLIC KEY =================
+async function extractPubKey() {
+  const pem = document.getElementById('privkey-input').value.trim();
+  const outEl = document.getElementById('pubkey-output');
+  if (!pem) { showStatus('pubkey-status','error','❌ Please paste a private key.'); return; }
+
+  showStatus('pubkey-status','info','⏳ Extracting...');
+
+  try {
+    const privKey = await importPrivateKey(pem);
+    // Re-export in different formats depending on key type
+    // We can't always extract pub from private via WebCrypto PKCS8 alone
+    // But if we generated internally we have the pub key
+    if (window._lastPubPem && window._lastPrivPem && pem.trim() === window._lastPrivPem.trim()) {
+      outEl.textContent = window._lastPubPem;
+      showStatus('pubkey-status','success','✅ Public key extracted!');
+    } else {
+      // Try to import and re-export
+      showStatus('pubkey-status','error','⚠️ Web Crypto API cannot extract public key from raw PKCS#8 without the original object. Generate a key pair above and use the included public key, or paste a key generated in this session.');
+      outEl.textContent = '— Unable to extract: generate a key pair in the Generate panel above first —';
+    }
+  } catch(e) {
+    showStatus('pubkey-status','error','❌ ' + e.message);
+  }
+}
+
+function resetPubKey() {
+  document.getElementById('privkey-input').value = '';
+  document.getElementById('pubkey-output').textContent = '— paste a private key above and click Extract —';
+  hideStatus('pubkey-status');
+}
+
+// ================= ENCRYPT =================
+async function encryptMsg() {
+  const msg = document.getElementById('enc-plaintext').value;
+  const pubPem = document.getElementById('enc-pubkey').value.trim();
+  const padding = document.getElementById('enc-padding').value;
+  const hash = document.getElementById('enc-hash').value;
+  const outEl = document.getElementById('enc-output');
+
+  if (!msg) { showStatus('enc-status','error','❌ Enter a message to encrypt.'); return; }
+  if (!pubPem) { showStatus('enc-status','error','❌ Paste a public key.'); return; }
+
+  showStatus('enc-status','info','⏳ Encrypting...');
+  try {
+    const alg = padding === 'oaep' ? {name:'RSA-OAEP', hash} : {name:'RSA-OAEP', hash};
+    const pubKey = await importPublicKey(pubPem, 'RSA-OAEP', hash);
+    const enc = new TextEncoder();
+    const ct = await crypto.subtle.encrypt({name:'RSA-OAEP'}, pubKey, enc.encode(msg));
+    outEl.textContent = arrayBufferToBase64(ct);
+    showStatus('enc-status','success','✅ Message encrypted successfully!');
+  } catch(e) {
+    showStatus('enc-status','error','❌ ' + e.message);
+  }
+}
+
+// ================= DECRYPT =================
+async function decryptMsg() {
+  const ctB64 = document.getElementById('dec-ciphertext').value.trim();
+  const privPem = document.getElementById('dec-privkey').value.trim();
+  const outEl = document.getElementById('dec-output');
+
+  if (!ctB64) { showStatus('dec-status','error','❌ Paste ciphertext.'); return; }
+  if (!privPem) { showStatus('dec-status','error','❌ Paste private key.'); return; }
+
+  showStatus('dec-status','info','⏳ Decrypting...');
+  try {
+    const privKey = await importPrivateKey(privPem, 'RSA-OAEP', 'SHA-256');
+    const ct = base64ToArrayBuffer(ctB64);
+    const pt = await crypto.subtle.decrypt({name:'RSA-OAEP'}, privKey, ct);
+    const dec = new TextDecoder();
+    outEl.textContent = dec.decode(pt);
+    showStatus('dec-status','success','✅ Message decrypted!');
+  } catch(e) {
+    showStatus('dec-status','error','❌ Decryption failed: ' + e.message);
+  }
+}
+
+// ================= SYMMETRIC =================
+async function symCrypt() {
+  const msg = document.getElementById('sym-msg').value;
+  const password = document.getElementById('sym-key').value;
+  const mode = document.getElementById('sym-mode').value;
+  const algo = document.getElementById('sym-algo').value;
+  const outEl = document.getElementById('sym-output');
+
+  if (!msg || !password) { showStatus('sym-status','error','❌ Enter message and password.'); return; }
+
+  showStatus('sym-status','info','⏳ Processing...');
+  try {
+    if (mode === 'encrypt') {
+      const result = await aesEncrypt(msg, password, algo);
+      outEl.textContent = result;
+      showStatus('sym-status','success','✅ Encrypted! (format: iv:ciphertext in base64)');
+    } else {
+      const result = await aesDecrypt(msg, password, algo);
+      outEl.textContent = result;
+      showStatus('sym-status','success','✅ Decrypted!');
+    }
+  } catch(e) {
+    showStatus('sym-status','error','❌ ' + e.message);
+  }
+}
+
+async function aesEncrypt(plaintext, password, algo) {
+  const key = await deriveKey(password, algo);
+  const iv = crypto.getRandomValues(new Uint8Array(algo === 'AES-GCM' ? 12 : 16));
+  const enc = new TextEncoder();
+  const ct = await crypto.subtle.encrypt({name: algo, iv}, key, enc.encode(plaintext));
+  return arrayBufferToBase64(iv) + ':' + arrayBufferToBase64(ct);
+}
+
+async function aesDecrypt(ciphertext, password, algo) {
+  const [ivB64, ctB64] = ciphertext.split(':');
+  if (!ivB64 || !ctB64) throw new Error('Invalid format. Expected iv:ciphertext');
+  const iv = base64ToArrayBuffer(ivB64);
+  const ct = base64ToArrayBuffer(ctB64);
+  const key = await deriveKey(password, algo);
+  const pt = await crypto.subtle.decrypt({name: algo, iv}, key, ct);
+  return new TextDecoder().decode(pt);
+}
+
+async function deriveKey(password, algo) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  const salt = enc.encode('UTHCryptoLabSalt2024');
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:100000, hash:'SHA-256'},
+    keyMaterial,
+    {name: algo, length: 256},
+    false,
+    ['encrypt','decrypt']
+  );
+}
+
+// ================= SIGN =================
+async function signMsg() {
+  const msg = document.getElementById('sign-msg').value;
+  const privPem = document.getElementById('sign-privkey').value.trim();
+  const hash = document.getElementById('sign-hash').value;
+  const fmt = document.getElementById('sign-fmt').value;
+  const outEl = document.getElementById('sign-output');
+
+  if (!msg || !privPem) { showStatus('sign-status','error','❌ Enter message and private key.'); return; }
+  showStatus('sign-status','info','⏳ Signing...');
+
+  try {
+    const algoName = fmt === 'pss' ? 'RSA-PSS' : 'RSASSA-PKCS1-v1_5';
+    const privKey = await importPrivateKey(privPem, algoName, hash);
+    const enc = new TextEncoder();
+    const algParams = algoName === 'RSA-PSS' ? {name:'RSA-PSS', saltLength:32} : {name:'RSASSA-PKCS1-v1_5'};
+    const sig = await crypto.subtle.sign(algParams, privKey, enc.encode(msg));
+    outEl.textContent = arrayBufferToBase64(sig);
+    window._lastSig = arrayBufferToBase64(sig);
+    showStatus('sign-status','success','✅ Signature created!');
+  } catch(e) {
+    showStatus('sign-status','error','❌ ' + e.message);
+  }
+}
+
+// ================= VERIFY =================
+async function verifyMsg() {
+  const msg = document.getElementById('verify-msg').value;
+  const sigB64 = document.getElementById('verify-sig').value.trim();
+  const pubPem = document.getElementById('verify-pubkey').value.trim();
+  const hash = document.getElementById('verify-hash').value;
+
+  if (!msg || !sigB64 || !pubPem) { showStatus('verify-status','error','❌ Fill all fields.'); return; }
+  showStatus('verify-status','info','⏳ Verifying...');
+
+  try {
+    const pubKey = await importPublicKey(pubPem, 'RSASSA-PKCS1-v1_5', hash);
+    const enc = new TextEncoder();
+    const sig = base64ToArrayBuffer(sigB64);
+    const valid = await crypto.subtle.verify({name:'RSASSA-PKCS1-v1_5'}, pubKey, sig, enc.encode(msg));
+    if (valid) {
+      showStatus('verify-status','success','✅ Signature is VALID — message integrity confirmed!');
+    } else {
+      showStatus('verify-status','error','❌ Signature is INVALID — message may have been tampered with!');
+    }
+  } catch(e) {
+    showStatus('verify-status','error','❌ ' + e.message);
+  }
+}
+
+// ================= HASH =================
+async function liveHash() {
+  const input = document.getElementById('hash-input').value;
+  const algo = document.getElementById('hash-algo').value;
+  const enc = document.getElementById('hash-enc').value;
+  const outEl = document.getElementById('hash-output');
+
+  if (!input) { outEl.textContent = '—'; return; }
+  try {
+    const encoded = new TextEncoder().encode(input);
+    const hashBuffer = await crypto.subtle.digest(algo, encoded);
+    if (enc === 'hex') {
+      outEl.textContent = Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    } else {
+      outEl.textContent = arrayBufferToBase64(hashBuffer);
+    }
+  } catch(e) {
+    outEl.textContent = '❌ ' + e.message;
+  }
+}
+
+// ================= HELPERS =================
+function arrayBufferToPem(buffer, label) {
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return `-----BEGIN ${label}-----\n${lines}\n-----END ${label}-----`;
+}
+
+function pemToArrayBuffer(pem) {
+  const b64 = pem.replace(/-----[^-]+-----/g,'').replace(/\s/g,'');
+  const bin = atob(b64);
+  return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
+}
+
+function arrayBufferToBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+function base64ToArrayBuffer(b64) {
+  const bin = atob(b64.trim());
+  return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
+}
+
+async function importPublicKey(pem, algoName, hash) {
+  const buf = pemToArrayBuffer(pem);
+  let algo;
+  if (algoName === 'RSA-OAEP') algo = {name:'RSA-OAEP', hash};
+  else if (algoName === 'RSASSA-PKCS1-v1_5') algo = {name:'RSASSA-PKCS1-v1_5', hash};
+  else algo = {name:'RSA-PSS', hash};
+  const usage = algoName === 'RSA-OAEP' ? ['encrypt'] : ['verify'];
+  return crypto.subtle.importKey('spki', buf, algo, true, usage);
+}
+
+async function importPrivateKey(pem, algoName = 'RSA-OAEP', hash = 'SHA-256') {
+  const buf = pemToArrayBuffer(pem);
+  let algo;
+  if (algoName === 'RSA-OAEP') algo = {name:'RSA-OAEP', hash};
+  else if (algoName === 'RSASSA-PKCS1-v1_5') algo = {name:'RSASSA-PKCS1-v1_5', hash};
+  else if (algoName === 'RSA-PSS') algo = {name:'RSA-PSS', hash};
+  else algo = {name:'RSA-OAEP', hash: 'SHA-256'};
+  const usage = algoName === 'RSA-OAEP' ? ['decrypt'] : ['sign'];
+  return crypto.subtle.importKey('pkcs8', buf, algo, true, usage);
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  const text = el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = el.style.borderColor;
+    el.style.borderColor = 'var(--green-bright)';
+    setTimeout(() => { el.style.borderColor = orig; }, 800);
+  });
+}
+
+function showStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'status-bar ' + type + ' show';
+  el.textContent = msg;
+}
+
+function hideStatus(id) {
+  const el = document.getElementById(id);
+  el.className = 'status-bar';
+}
+
+function togglePanel(id) {
+  const panel = document.getElementById(id);
+  panel.classList.toggle('open');
+  const ch = panel.querySelector('.panel-chevron');
+  ch.textContent = panel.classList.contains('open') ? '▲' : '▼';
+}
+
+function switchInner(group, tab) {
+  const panel = document.getElementById('panel-' + group);
+  panel.querySelectorAll('.inner-tab').forEach(t => t.classList.remove('active'));
+  panel.querySelectorAll('.inner-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(group + '-' + tab).classList.add('active');
+}
+
+function resetPanel(name) {
+  if (name === 'keygen') {
+    document.getElementById('keygen-output').textContent = '— run Generate to produce a key —';
+    document.getElementById('passphrase').value = '';
+    generatedPrivateKey = null;
+    generatedPublicKey = null;
+    hideStatus('keygen-status');
+    updateCommand();
+  }
+}
+
+function showInfo() {
+  alert('UTH CryptoLab\n\nUniversidad Tecnológica de Honduras\n\nThis tool provides cryptographic operations running entirely in your browser using the Web Crypto API.\n\nNo data is transmitted to any server.\n\nOperations supported:\n• RSA & EC key generation\n• RSA encryption/decryption (OAEP)\n• AES symmetric encryption (GCM/CBC)\n• Digital signatures (PKCS#1, PSS)\n• Cryptographic hashing (SHA family)');
+}
+
+function toggleTheme() {
+  document.body.style.filter = document.body.style.filter === 'invert(0.9) hue-rotate(180deg)' ? '' : 'invert(0.9) hue-rotate(180deg)';
+}
+
+// Init
+updateCommand();
+</script>
+</body>
+</html>
