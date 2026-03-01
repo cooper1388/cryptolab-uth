@@ -909,6 +909,38 @@
 
         <!-- LIVE VALIDATION TAB -->
         <div class="inner-content active" id="cert-live-tab">
+
+          <!-- Educational Info Box -->
+          <div style="background:rgba(200,168,0,0.08);border:1px solid rgba(200,168,0,0.25);border-radius:5px;padding:12px;margin-bottom:14px;font-size:0.85rem;line-height:1.6">
+            <div style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px">
+              ℹ️ LIVE CERTIFICATE VALIDATION - VALIDACIÓN EN TIEMPO REAL
+            </div>
+            <div style="color:var(--text-dim)">
+              Esta herramienta te permite <strong style="color:var(--text)">conectarte a un servidor real</strong> y extraer su certificado SSL/TLS en tiempo real usando <code style="background:#0a0a0a;padding:2px 6px;border-radius:3px">openssl s_client</code>.
+              <br><br>
+              <strong style="color:var(--gold-light)">📝 Datos a Ingresar:</strong>
+              <br>
+              • <strong>Hostname:</strong> El dominio o dirección IP del servidor (ej: www.google.com, github.com, 8.8.8.8)<br>
+              • <strong>Port:</strong> El puerto donde escucha el servicio SSL/TLS (443 para HTTPS, 465 para SMTPS, 993 para IMAPS)<br>
+              • <strong>Options:</strong> Parámetros adicionales de OpenSSL:
+              <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+                <li><code>-showcerts</code>: Muestra toda la cadena de certificados (recomendado)</li>
+                <li><code>-servername</code>: Añade SNI (Server Name Indication) - necesario para servidores con múltiples dominios</li>
+                <li><code>-brief</code>: Muestra solo información básica del certificado</li>
+              </ul>
+              <br>
+              <strong style="color:var(--gold-light)">🔍 ¿Por qué es útil?</strong>
+              <br>
+              • <strong>Inspección en vivo:</strong> Ver el certificado que un servidor está presentando actualmente<br>
+              • <strong>Diagnóstico:</strong> Detectar problemas de configuración SSL/TLS (expired, self-signed, wrong chain)<br>
+              • <strong>Auditoría de seguridad:</strong> Verificar qué algoritmos, versiones de TLS y cifrados usa el servidor<br>
+              • <strong>Troubleshooting:</strong> Identificar problemas con SNI, cadenas incompletas o certificados intermedios faltantes<br>
+              • <strong>Aprendizaje:</strong> Entender cómo funciona el handshake SSL/TLS y qué información intercambian cliente-servidor
+              <br><br>
+              <strong style="color:var(--gold-light)">⚡ Uso:</strong> Ingresa el hostname del servidor que deseas inspeccionar, ajusta el puerto si no es 443, y haz clic en "Validate Certificate" para conectarte y extraer el certificado.
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Hostname</label>
