@@ -607,6 +607,8 @@
       }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
+</head>
 </head>
 
 <body>
@@ -803,89 +805,204 @@
       </div>
     </div>
 
-    <!-- CERTIFICATE -->
+ <!-- CERTIFICATE -->
     <div class="panel" id="panel-sign">
       <div class="panel-header" onclick="togglePanel('panel-sign')">
         <div>
-          <div class="panel-title"><span class="icon">✍️</span> Certificate</div>
-          <div class="panel-subtitle">Generate digital certificate in pfx format from PEM and back</div>
+          <div class="panel-title"><span class="icon">📜</span> Certificate</div>
+          <div class="panel-subtitle">Generate CSR / self-signed certificates and export PFX (class project, runs locally)</div>
         </div>
         <div class="panel-chevron">▼</div>
       </div>
       <div class="panel-body">
 
         <div class="inner-tabs">
-          <button class="inner-tab active" onclick="switchInner('sign','sign-tab')">From PEM</button>
-          <button class="inner-tab" onclick="switchInner('sign','verify-tab')">From PFX</button>
+          <button class="inner-tab active" onclick="switchInner('sign','pem-tab')">From PEM</button>
+          <button class="inner-tab" onclick="switchInner('sign','pfx-tab')">From PFX</button>
         </div>
 
-        <div class="inner-content active" id="sign-sign-tab">
+        <!-- ================= FROM PEM (Generate) ================= -->
+        <div class="inner-content active" id="sign-pem-tab">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Type</label>
+              <select id="cert-type" onchange="cert_updateUI()">
+                <option value="self" selected>Self-Signed</option>
+                <option value="csr">CSR</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Output format</label>
+              <select id="cert-format" onchange="cert_updateUI()">
+                <option value="pem" selected>PEM (Linux)</option>
+                <option value="pfx">PFX (Windows)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Common Name (CN)</label>
+              <input type="text" id="cert-cn" value="example.com" placeholder="example.com" oninput="cert_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>Organization (O)</label>
+              <input type="text" id="cert-o" value="Mi Empresa S.L." placeholder="Mi Empresa S.L." oninput="cert_updateOpenSSL()" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Organizational Unit (OU)</label>
+              <input type="text" id="cert-ou" value="IT Dept" placeholder="IT Dept" oninput="cert_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="text" id="cert-email" value="admin@example.com" placeholder="admin@example.com" oninput="cert_updateOpenSSL()" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Country (C)</label>
+              <input type="text" id="cert-c" value="HN" maxlength="2" placeholder="HN" oninput="cert_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>State / Province (ST)</label>
+              <input type="text" id="cert-st" value="Yoro" placeholder="Yoro" oninput="cert_updateOpenSSL()" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Locality / City (L)</label>
+              <input type="text" id="cert-l" value="El Progreso" placeholder="El Progreso" oninput="cert_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>Validity (days)</label>
+              <input type="text" id="cert-days" value="365" placeholder="365" oninput="cert_updateOpenSSL()" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>RSA bits</label>
+              <select id="cert-rsa" onchange="cert_updateOpenSSL()">
+                <option value="2048" selected>2048</option>
+                <option value="3072">3072</option>
+                <option value="4096">4096</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Hash Function</label>
+              <select id="cert-hash" onchange="cert_updateOpenSSL()">
+                <option value="sha256" selected>SHA-256</option>
+                <option value="sha384">SHA-384</option>
+                <option value="sha512">SHA-512</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Base file name</label>
+              <input type="text" id="cert-base" value="certificate" placeholder="certificate" oninput="cert_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>Password (PFX)</label>
+              <input type="text" id="cert-pfx-pass" value="changeit" placeholder="Password para el .pfx" oninput="cert_updateOpenSSL()" />
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group full">
-              <label>Message to Sign</label>
-              <textarea id="sign-msg" placeholder="Enter the message to sign..."></textarea>
-            </div>
-            <div class="form-group full">
-              <label>Private Key (PEM)</label>
-              <textarea id="sign-privkey" placeholder="-----BEGIN PRIVATE KEY-----..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Hash Algorithm</label>
-              <select id="sign-hash">
-                <option value="SHA-256">SHA-256</option>
-                <option value="SHA-384">SHA-384</option>
-                <option value="SHA-512">SHA-512</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Signature Format</label>
-              <select id="sign-fmt">
-                <option value="pkcs1v15">PKCS#1 v1.5 (RSA)</option>
-                <option value="pss">PSS (RSA-PSS)</option>
-              </select>
+              <label>Existing private key (PEM) — optional (leave empty to generate a new key)</label>
+              <textarea id="cert-existing-key" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----" oninput="cert_updateOpenSSL()"></textarea>
             </div>
           </div>
-          <div class="btn-row">
-            <button class="btn btn-primary" onclick="signMsg()">▶ Sign</button>
-            <button class="btn btn-secondary" onclick="copyText('sign-output')">📋 Copy Signature</button>
-          </div>
-          <div class="status-bar" id="sign-status"></div>
-          <div class="form-group" style="margin-top:14px">
-            <label>Signature (Base64)</label>
+
+          <div class="divider"></div>
+
+          <div class="form-group">
+            <label>OpenSSL COMMANDS </label>
             <div class="output-wrapper">
-              <div class="code-block" id="sign-output" style="min-height:80px">—</div>
-              <button class="copy-btn-overlay" onclick="copyText('sign-output')">COPY</button>
+              <div class="code-block command-block" id="cert-openssl-cmd" style="min-height:80px">—</div>
+              <button class="copy-btn-overlay" onclick="copyText('cert-openssl-cmd')">COPY</button>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="cert_generate()"><span>▶</span> Generate</button>
+            <button class="btn btn-secondary" onclick="cert_copyActiveOutput()">📋 Copy Output</button>
+            <button class="btn btn-secondary" onclick="cert_downloadActive()">⬇ Download</button>
+            <button class="btn btn-danger" onclick="cert_reset()">↺ Reset</button>
+          </div>
+
+          <div class="status-bar" id="certgen-status"></div>
+
+          <div class="inner-tabs" style="margin-top:14px">
+            <button class="inner-tab active" id="cert-out-key-tab" onclick="cert_setView('key')">KEY</button>
+            <button class="inner-tab" id="cert-out-csr-tab" onclick="cert_setView('csr')">CSR</button>
+            <button class="inner-tab" id="cert-out-crt-tab" onclick="cert_setView('crt')">CRT</button>
+            <button class="inner-tab" id="cert-out-pfx-tab" onclick="cert_setView('pfx')">PFX</button>
+          </div>
+
+          <div class="form-group" style="margin-top:14px">
+            <label>Output</label>
+            <div class="output-wrapper">
+              <div class="code-block" id="cert-output" style="min-height:200px;color:#7dd67d;font-size:0.75rem;white-space:pre-wrap">— click Generate —</div>
+              <button class="copy-btn-overlay" onclick="cert_copyActiveOutput()">COPY</button>
             </div>
           </div>
         </div>
 
-        <div class="inner-content" id="sign-verify-tab">
+        <!-- ================= FROM PFX (Extract) ================= -->
+        <div class="inner-content" id="sign-pfx-tab">
+
           <div class="form-row">
-            <div class="form-group full">
-              <label>Original Message</label>
-              <textarea id="verify-msg" placeholder="Enter the original message..."></textarea>
-            </div>
-            <div class="form-group full">
-              <label>Signature (Base64)</label>
-              <textarea id="verify-sig" placeholder="Paste the signature..."></textarea>
-            </div>
-            <div class="form-group full">
-              <label>Public Key (PEM)</label>
-              <textarea id="verify-pubkey" placeholder="-----BEGIN PUBLIC KEY-----..."></textarea>
+            <div class="form-group">
+              <label>PFX / P12 file</label>
+              <input type="text" id="cert-pfx-file-note" value="Use the file picker below" disabled style="opacity:0.7" />
+              <input type="file" id="cert-pfx-file" accept=".pfx,.p12,application/x-pkcs12" style="margin-top:8px" />
             </div>
             <div class="form-group">
-              <label>Hash Algorithm</label>
-              <select id="verify-hash">
-                <option value="SHA-256">SHA-256</option>
-                <option value="SHA-384">SHA-384</option>
-                <option value="SHA-512">SHA-512</option>
-              </select>
+              <label>Password (PFX)</label>
+              <input type="text" id="cert-pfx-extract-pass" placeholder="Password del .pfx" />
             </div>
           </div>
+
           <div class="btn-row">
-            <button class="btn btn-primary" onclick="verifyMsg()">▶ Verify</button>
+            <button class="btn btn-primary" onclick="cert_extractPfx()"><span>▶</span> Extract</button>
+            <button class="btn btn-secondary" onclick="cert_copyExtract()">📋 Copy</button>
+            <button class="btn btn-secondary" onclick="cert_downloadExtract()">⬇ Download PEMs</button>
+            <button class="btn btn-danger" onclick="cert_resetExtract()">↺ Reset</button>
           </div>
-          <div class="status-bar" id="verify-status"></div>
+
+          <div class="status-bar" id="certextract-status"></div>
+
+          <div class="form-row" style="margin-top:14px">
+            <div class="form-group full">
+              <label>OpenSSL (extract)</label>
+              <div class="output-wrapper">
+                <div class="code-block command-block" id="cert-extract-openssl" style="min-height:80px">openssl pkcs12 -in archivo.pfx -clcerts -nokeys -out extracted.crt.pem
+openssl pkcs12 -in archivo.pfx -nocerts -out extracted.key.pem
+openssl pkcs12 -in archivo.pfx -nocerts -nodes -out extracted.key.pem</div>
+                <button class="copy-btn-overlay" onclick="copyText('cert-extract-openssl')">COPY</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top:14px">
+            <div class="form-group">
+              <label>Private Key (PEM)</label>
+              <textarea id="cert-extract-key" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Certificate (PEM)</label>
+              <textarea id="cert-extract-crt" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -2279,6 +2396,486 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
 
     // Init
     updateCommand();
+
+
+// ================= CERTIFICATES=================
+    // Nota: Esta sección genera certificados/CSR
+
+    const CERT = {
+      view: 'key', // key|csr|crt|pfx
+      type: 'self', // self|csr
+      format: 'pem', // pem|pfx
+      keyPem: '',
+      csrPem: '',
+      crtPem: '',
+      pfxB64: ''
+    };
+
+    function cert_init() {
+      try {
+        cert_updateUI();
+        cert_updateOpenSSL();
+        cert_setView('key');
+      } catch (e) {
+        // no-op
+      }
+    }
+
+    function cert_updateUI() {
+      const type = document.getElementById('cert-type')?.value || 'self';
+      const fmtSel = document.getElementById('cert-format');
+      if (!fmtSel) return;
+
+      CERT.type = type;
+
+      // CSR siempre es PEM (no PFX directo)
+      if (type === 'csr') {
+        fmtSel.value = 'pem';
+        fmtSel.querySelector('option[value="pfx"]').disabled = true;
+      } else {
+        fmtSel.querySelector('option[value="pfx"]').disabled = false;
+      }
+
+      CERT.format = fmtSel.value;
+
+      // Toggle tabs visibility depending on selections
+      const pfxOutTab = document.getElementById('cert-out-pfx-tab');
+      const crtOutTab = document.getElementById('cert-out-crt-tab');
+      const csrOutTab = document.getElementById('cert-out-csr-tab');
+
+      if (type === 'csr') {
+        // CSR => key+csr
+        if (crtOutTab) crtOutTab.style.display = 'none';
+        if (pfxOutTab) pfxOutTab.style.display = 'none';
+        if (csrOutTab) csrOutTab.style.display = '';
+        if (CERT.view === 'crt' || CERT.view === 'pfx') cert_setView('csr');
+      } else {
+        if (crtOutTab) crtOutTab.style.display = '';
+        if (pfxOutTab) pfxOutTab.style.display = '';
+        if (csrOutTab) csrOutTab.style.display = 'none'; // self-signed no necesita CSR por defecto
+        if (CERT.view === 'csr') cert_setView('crt');
+      }
+
+      // PFX password enabled only if self+pfx
+      const pass = document.getElementById('cert-pfx-pass');
+      if (pass) pass.disabled = !(type === 'self' && fmtSel.value === 'pfx');
+
+      cert_updateOpenSSL();
+    }
+
+    function cert_getBaseName() {
+      const v = (document.getElementById('cert-base')?.value || 'certificate').trim() || 'certificate';
+      return v.replace(/[^\w.-]+/g, '_');
+    }
+
+    function cert_getSubject() {
+      const cn = (document.getElementById('cert-cn')?.value || '').trim();
+      const o  = (document.getElementById('cert-o')?.value || '').trim();
+      const ou = (document.getElementById('cert-ou')?.value || '').trim();
+      const c  = (document.getElementById('cert-c')?.value || '').trim();
+      const st = (document.getElementById('cert-st')?.value || '').trim();
+      const l  = (document.getElementById('cert-l')?.value || '').trim();
+      const email = (document.getElementById('cert-email')?.value || '').trim();
+
+      return { cn, o, ou, c, st, l, email };
+    }
+
+    function cert_validateInputs() {
+      const s = cert_getSubject();
+      const days = parseInt((document.getElementById('cert-days')?.value || '365').trim(), 10);
+      if (!s.cn) throw new Error('CN es obligatorio.');
+      if (s.c && !/^[A-Za-z]{2}$/.test(s.c)) throw new Error('C (país) debe ser de 2 letras (ej: HN).');
+      if (!Number.isFinite(days) || days < 1) throw new Error('Validity (days) debe ser > 0.');
+      return { subject: s, days };
+    }
+
+    function cert_getHashMd() {
+      const v = (document.getElementById('cert-hash')?.value || 'sha256').toLowerCase();
+      if (v === 'sha384') return forge.md.sha384.create();
+      if (v === 'sha512') return forge.md.sha512.create();
+      return forge.md.sha256.create();
+    }
+
+    function cert_getHashOpenSSLFlag() {
+      const v = (document.getElementById('cert-hash')?.value || 'sha256').toLowerCase();
+      if (v === 'sha384') return 'sha384';
+      if (v === 'sha512') return 'sha512';
+      return 'sha256';
+    }
+
+    function cert_subjectAttrs(subject) {
+      const attrs = [];
+      if (subject.cn) attrs.push({ name: 'commonName', value: subject.cn });
+      if (subject.o) attrs.push({ name: 'organizationName', value: subject.o });
+      if (subject.ou) attrs.push({ name: 'organizationalUnitName', value: subject.ou });
+      if (subject.c) attrs.push({ name: 'countryName', value: subject.c.toUpperCase() });
+      if (subject.st) attrs.push({ name: 'stateOrProvinceName', value: subject.st });
+      if (subject.l) attrs.push({ name: 'localityName', value: subject.l });
+      if (subject.email) attrs.push({ name: 'emailAddress', value: subject.email });
+      return attrs;
+    }
+
+    function cert_leafExtensions() {
+      return [
+        { name: 'basicConstraints', cA: false, critical: true },
+        { name: 'keyUsage', digitalSignature: true, keyEncipherment: true, critical: true },
+        { name: 'extKeyUsage', serverAuth: true, clientAuth: true },
+        { name: 'subjectKeyIdentifier' }
+      ];
+    }
+
+    function cert_randomSerialHex() {
+      const bytes = forge.random.getBytesSync(16);
+      let hex = forge.util.bytesToHex(bytes).replace(/^00+/, '');
+      if (!hex) hex = '01';
+      return hex;
+    }
+
+    function cert_updateOpenSSL() {
+      const box = document.getElementById('cert-openssl-cmd');
+      if (!box) return;
+
+      const type = document.getElementById('cert-type')?.value || 'self';
+      const fmt = document.getElementById('cert-format')?.value || 'pem';
+      const bits = parseInt(document.getElementById('cert-rsa')?.value || '2048', 10) || 2048;
+      const days = parseInt((document.getElementById('cert-days')?.value || '365').trim(), 10) || 365;
+      const base = cert_getBaseName();
+      const hash = cert_getHashOpenSSLFlag();
+      const hasExistingKey = ((document.getElementById('cert-existing-key')?.value || '').trim().startsWith('-----BEGIN'));
+
+      const subj = (() => {
+        const s = cert_getSubject();
+        const parts = [];
+        if (s.c) parts.push(`/C=${s.c.toUpperCase()}`);
+        if (s.st) parts.push(`/ST=${s.st}`);
+        if (s.l) parts.push(`/L=${s.l}`);
+        if (s.o) parts.push(`/O=${s.o}`);
+        if (s.ou) parts.push(`/OU=${s.ou}`);
+        if (s.cn) parts.push(`/CN=${s.cn}`);
+        if (s.email) parts.push(`/emailAddress=${s.email}`);
+        return parts.length ? parts.join('') : '/CN=example.com';
+      })();
+
+      const lines = [];
+      if (type === 'csr') {
+        lines.push(`# CSR (KEY + CSR)`);
+        if (hasExistingKey) {
+          lines.push(`# 1) Guarda tu clave como: ${base}.key.pem`);
+          lines.push(`openssl req -new -${hash} \\`);
+          lines.push(`  -key ${base}.key.pem \\`);
+          lines.push(`  -out ${base}.csr.pem \\`);
+          lines.push(`  -subj "${subj}"`);
+        } else {
+          lines.push(`openssl req -new -newkey rsa:${bits} -${hash} -nodes \\`);
+          lines.push(`  -keyout ${base}.key.pem \\`);
+          lines.push(`  -out ${base}.csr.pem \\`);
+          lines.push(`  -subj "${subj}"`);
+        }
+        lines.push('');
+        lines.push(`# Inspeccionar CSR`);
+        lines.push(`openssl req -in ${base}.csr.pem -noout -text`);
+      } else {
+        lines.push(`# Self-Signed (KEY + CRT)`);
+        if (hasExistingKey) {
+          lines.push(`# 1) Guarda tu clave como: ${base}.key.pem`);
+          lines.push(`openssl req -x509 -new -${hash} \\`);
+          lines.push(`  -key ${base}.key.pem \\`);
+          lines.push(`  -out ${base}.crt.pem \\`);
+          lines.push(`  -days ${days} \\`);
+          lines.push(`  -subj "${subj}"`);
+        } else {
+          lines.push(`openssl req -x509 -newkey rsa:${bits} -${hash} -nodes \\`);
+          lines.push(`  -keyout ${base}.key.pem \\`);
+          lines.push(`  -out ${base}.crt.pem \\`);
+          lines.push(`  -days ${days} \\`);
+          lines.push(`  -subj "${subj}"`);
+        }
+        lines.push('');
+        lines.push(`# Inspeccionar certificado`);
+        lines.push(`openssl x509 -in ${base}.crt.pem -noout -text`);
+
+        if (fmt === 'pfx') {
+          lines.push('');
+          lines.push(`# Exportar a PFX (PKCS#12)`);
+          lines.push(`openssl pkcs12 -export \\`);
+          lines.push(`  -inkey ${base}.key.pem \\`);
+          lines.push(`  -in ${base}.crt.pem \\`);
+          lines.push(`  -name "${base}" \\`);
+          lines.push(`  -out ${base}.pfx`);
+        }
+      }
+
+      box.textContent = lines.join('\n');
+    }
+
+    function cert_setView(view) {
+      CERT.view = view;
+
+      const tabs = ['key','csr','crt','pfx'];
+      for (const t of tabs) {
+        const el = document.getElementById(`cert-out-${t}-tab`);
+        if (!el) continue;
+        el.classList.toggle('active', t === view);
+      }
+
+      const out = document.getElementById('cert-output');
+      if (!out) return;
+
+      if (view === 'key') out.textContent = CERT.keyPem || '—';
+      if (view === 'csr') out.textContent = CERT.csrPem || '—';
+      if (view === 'crt') out.textContent = CERT.crtPem || '—';
+      if (view === 'pfx') out.textContent = CERT.pfxB64 ? `# PFX (Base64)\n${CERT.pfxB64}` : '—';
+
+      // Ajuste visual: si no hay data aún
+      if ((view === 'key' && !CERT.keyPem) ||
+          (view === 'csr' && !CERT.csrPem) ||
+          (view === 'crt' && !CERT.crtPem) ||
+          (view === 'pfx' && !CERT.pfxB64)) {
+        // keep output minimal
+      }
+    }
+
+    function cert_reset() {
+      document.getElementById('cert-type').value = 'self';
+      document.getElementById('cert-format').value = 'pem';
+      document.getElementById('cert-cn').value = 'example.com';
+      document.getElementById('cert-o').value = 'Mi Empresa S.L.';
+      document.getElementById('cert-ou').value = 'IT Dept';
+      document.getElementById('cert-email').value = 'admin@example.com';
+      document.getElementById('cert-c').value = 'HN';
+      document.getElementById('cert-st').value = 'Yoro';
+      document.getElementById('cert-l').value = 'El Progreso';
+      document.getElementById('cert-days').value = '365';
+      document.getElementById('cert-rsa').value = '2048';
+      document.getElementById('cert-hash').value = 'sha256';
+      document.getElementById('cert-base').value = 'certificate';
+      document.getElementById('cert-pfx-pass').value = 'changeit';
+      document.getElementById('cert-existing-key').value = '';
+
+      CERT.keyPem = '';
+      CERT.csrPem = '';
+      CERT.crtPem = '';
+      CERT.pfxB64 = '';
+
+      cert_updateUI();
+      cert_setView('key');
+      const out = document.getElementById('cert-output');
+      if (out) out.textContent = '— click Generate —';
+      hideStatus('certgen-status');
+    }
+
+    async function cert_generate() {
+      const statusId = 'certgen-status';
+      showStatus(statusId, 'info', '⏳ Generating certificate material...');
+
+      try {
+        if (typeof forge === 'undefined') throw new Error('node-forge no está cargado (CDN).');
+
+        const { subject, days } = cert_validateInputs();
+        const type = document.getElementById('cert-type').value;
+        const format = document.getElementById('cert-format').value;
+        const rsaBits = parseInt(document.getElementById('cert-rsa').value, 10) || 2048;
+        const md = cert_getHashMd();
+        const base = cert_getBaseName();
+        const existingKeyPem = (document.getElementById('cert-existing-key').value || '').trim();
+        const pfxPass = document.getElementById('cert-pfx-pass').value || '';
+
+        let privateKey, publicKey, keyPem;
+
+        if (existingKeyPem.startsWith('-----BEGIN')) {
+          privateKey = forge.pki.privateKeyFromPem(existingKeyPem);
+          publicKey = forge.pki.rsa.setPublicKey(privateKey.n, privateKey.e);
+          keyPem = existingKeyPem;
+        } else {
+          const keys = forge.pki.rsa.generateKeyPair(rsaBits);
+          privateKey = keys.privateKey;
+          publicKey = keys.publicKey;
+          keyPem = forge.pki.privateKeyToPem(privateKey);
+        }
+
+        CERT.keyPem = keyPem;
+        CERT.csrPem = '';
+        CERT.crtPem = '';
+        CERT.pfxB64 = '';
+
+        if (type === 'csr') {
+          const csr = forge.pki.createCertificationRequest();
+          csr.publicKey = publicKey;
+          csr.setSubject(cert_subjectAttrs(subject));
+          csr.setAttributes([]); // SIN SAN
+          csr.sign(privateKey, md);
+
+          CERT.csrPem = forge.pki.certificationRequestToPem(csr);
+          cert_updateUI();
+          cert_setView('csr');
+          showStatus(statusId, 'success', `✅ CSR generado. (Archivos sugeridos: ${base}.key.pem / ${base}.csr.pem)`);
+          return;
+        }
+
+        // self-signed
+        const cert = forge.pki.createCertificate();
+        cert.publicKey = publicKey;
+        cert.serialNumber = cert_randomSerialHex();
+
+        const now = new Date();
+        cert.validity.notBefore = now;
+        cert.validity.notAfter = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+        const attrs = cert_subjectAttrs(subject);
+        cert.setSubject(attrs);
+        cert.setIssuer(attrs);
+        cert.setExtensions(cert_leafExtensions());
+        cert.sign(privateKey, md);
+
+        CERT.crtPem = forge.pki.certificateToPem(cert);
+
+        if (format === 'pfx') {
+          if (!pfxPass) throw new Error('Ingresa Password (PFX).');
+          // pkcs12
+          const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
+            privateKey,
+            [cert],
+            pfxPass,
+            { algorithm: '3des', friendlyName: base }
+          );
+          const der = forge.asn1.toDer(p12Asn1).getBytes();
+          CERT.pfxB64 = forge.util.encode64(der);
+          cert_updateUI();
+          cert_setView('pfx');
+          showStatus(statusId, 'success', `✅ Certificado self-signed generado y exportado a PFX (${base}.pfx).`);
+          return;
+        }
+
+        cert_updateUI();
+        cert_setView('crt');
+        showStatus(statusId, 'success', `✅ Certificado self-signed generado (${base}.key.pem / ${base}.crt.pem).`);
+      } catch (e) {
+        showStatus('certgen-status', 'error', '❌ ' + (e?.message || 'Error'));
+      }
+    }
+
+    function cert_copyActiveOutput() {
+      const out = document.getElementById('cert-output');
+      if (!out) return;
+      const t = (out.textContent || '').trim();
+      if (!t || t === '—') return;
+      navigator.clipboard.writeText(t);
+      showStatus('certgen-status', 'success', '✅ Copied to clipboard!');
+    }
+
+    function cert_downloadActive() {
+      const base = cert_getBaseName();
+
+      if (CERT.view === 'key') return cert_downloadText(`${base}.key.pem`, CERT.keyPem);
+      if (CERT.view === 'csr') return cert_downloadText(`${base}.csr.pem`, CERT.csrPem);
+      if (CERT.view === 'crt') return cert_downloadText(`${base}.crt.pem`, CERT.crtPem);
+      if (CERT.view === 'pfx') return cert_downloadB64(`${base}.pfx`, CERT.pfxB64, 'application/x-pkcs12');
+
+      showStatus('certgen-status', 'info', 'ℹ️ Nothing to download.');
+    }
+
+    function cert_downloadText(filename, text) {
+      if (!text) return showStatus('certgen-status', 'error', '❌ No output to download.');
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 400);
+      showStatus('certgen-status', 'success', `⬇ Downloaded: ${filename}`);
+    }
+
+    function cert_downloadB64(filename, b64, mime) {
+      if (!b64) return showStatus('certgen-status', 'error', '❌ No PFX to download.');
+      const raw = atob(b64);
+      const arr = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      const blob = new Blob([arr], { type: mime || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 400);
+      showStatus('certgen-status', 'success', `⬇ Downloaded: ${filename}`);
+    }
+
+    async function cert_extractPfx() {
+      const statusId = 'certextract-status';
+      showStatus(statusId, 'info', '⏳ Extracting PFX...');
+      try {
+        if (typeof forge === 'undefined') throw new Error('node-forge no está cargado (CDN).');
+
+        const file = document.getElementById('cert-pfx-file')?.files?.[0];
+        if (!file) throw new Error('Selecciona un archivo .pfx/.p12.');
+
+        const pass = document.getElementById('cert-pfx-extract-pass')?.value || '';
+
+        const buf = await file.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+
+        const asn1 = forge.asn1.fromDer(binary);
+        const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, pass);
+
+        // Key
+        const keyBags =
+          p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag] ||
+          p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag];
+
+        if (!keyBags || !keyBags.length) throw new Error('No se encontró private key (password incorrecta o PFX sin clave).');
+        const keyPem = forge.pki.privateKeyToPem(keyBags[0].key);
+
+        // Cert
+        const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
+        if (!certBags || !certBags.length) throw new Error('No se encontró certificado en el PFX.');
+        const certPem = forge.pki.certificateToPem(certBags[0].cert);
+
+        document.getElementById('cert-extract-key').value = keyPem;
+        document.getElementById('cert-extract-crt').value = certPem;
+
+        showStatus(statusId, 'success', '✅ Extracted successfully!');
+      } catch (e) {
+        showStatus('certextract-status', 'error', '❌ ' + (e?.message || 'Error'));
+      }
+    }
+
+    function cert_copyExtract() {
+      const key = document.getElementById('cert-extract-key')?.value || '';
+      const crt = document.getElementById('cert-extract-crt')?.value || '';
+      const all = `# PRIVATE KEY\n${key}\n\n# CERTIFICATE\n${crt}\n`;
+      navigator.clipboard.writeText(all);
+      showStatus('certextract-status', 'success', '✅ Copied!');
+    }
+
+    function cert_downloadExtract() {
+      const key = document.getElementById('cert-extract-key')?.value || '';
+      const crt = document.getElementById('cert-extract-crt')?.value || '';
+      if (!key && !crt) return showStatus('certextract-status', 'error', '❌ Nothing to download.');
+      if (key) cert_downloadText('extracted.key.pem', key);
+      if (crt) cert_downloadText('extracted.crt.pem', crt);
+      showStatus('certextract-status', 'success', '⬇ PEMs downloaded.');
+    }
+
+    function cert_resetExtract() {
+      document.getElementById('cert-pfx-file').value = '';
+      document.getElementById('cert-pfx-extract-pass').value = '';
+      document.getElementById('cert-extract-key').value = '';
+      document.getElementById('cert-extract-crt').value = '';
+      hideStatus('certextract-status');
+    }
+
+    // Auto-init (no rompe tu listener existente)
+    window.addEventListener('DOMContentLoaded', () => cert_init());
+
+
+
   </script>
 </body>
 
