@@ -607,7 +607,21 @@
       }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js">
+function sanitizeFilename(name){
+  return String(name || '').trim().replace(/[^\w.-]+/g,'_') || 'output.pem';
+}
+function downloadTextFile(filename, content){
+  const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 300);
+}
+</script>
 </head>
 </head>
 
@@ -803,19 +817,20 @@
       <div class="panel-header" onclick="togglePanel('panel-sign')">
         <div>
           <div class="panel-title"><span class="icon">📜</span> Certificate</div>
-          <div class="panel-subtitle">Generate CSR / self-signed certificates and export PFX (class project, runs locally)</div>
+          <div class="panel-subtitle">Generate CSR / self-signed certificates and export PFX</div>
         </div>
         <div class="panel-chevron">▼</div>
       </div>
       <div class="panel-body">
 
         <div class="inner-tabs">
-          <button class="inner-tab active" onclick="switchInner('sign','pem-tab')">From PEM</button>
-          <button class="inner-tab" onclick="switchInner('sign','pfx-tab')">From PFX</button>
+          <button class="inner-tab active" onclick="switchInner('sign','new-tab')">Nuevo Certificado</button>
+          <button class="inner-tab" onclick="switchInner('sign','pem-tab')">From PFX</button>
+          <button class="inner-tab" onclick="switchInner('sign','pfx-tab')">From PEM</button>
         </div>
 
         <!-- ================= FROM PEM (Generate) ================= -->
-        <div class="inner-content active" id="sign-pem-tab">
+        <div class="inner-content active" id="sign-new-tab">
 
           <div class="form-row">
             <div class="form-group">
@@ -915,6 +930,27 @@
             </div>
           </div>
 
+
+          <div class="form-row">
+            <div class="form-group full">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                <input type="checkbox" id="cert-chain-enable" onchange="cert_updateOpenSSL();cert_updateChainUI();" />
+                <span>Generate Chain (CA + Leaf)</span>
+              </label>
+              <div class="hint" style="font-size:0.7rem;color:var(--text-dim)">Genera una CA local y firma el certificado final (leaf).</div>
+            </div>
+          </div>
+
+          <div class="form-row" id="cert-chain-options" style="display:none;">
+            <div class="form-group">
+              <label>CA Common Name (CN)</label>
+              <input type="text" id="cert-ca-cn" value="UTH Class CA" placeholder="UTH Class CA" oninput="cert_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>CA Validity (days)</label>
+              <input type="text" id="cert-ca-days" value="365" oninput="cert_updateOpenSSL()" />
+            </div>
+          </div>
           <div class="divider"></div>
 
           <div class="form-group">
@@ -929,6 +965,10 @@
             <button class="btn btn-primary" onclick="cert_generate()"><span>▶</span> Generate</button>
             <button class="btn btn-secondary" onclick="cert_copyActiveOutput()">📋 Copy Output</button>
             <button class="btn btn-secondary" onclick="cert_downloadActive()">⬇ Download</button>
+            <button class="btn btn-secondary" id="cert-btn-ca-crt" style="display:none" onclick="cert_downloadCaCrt()">⬇ CA CRT</button>
+            <button class="btn btn-secondary" id="cert-btn-ca-key" style="display:none" onclick="cert_downloadCaKey()">⬇ CA KEY</button>
+            <button class="btn btn-secondary" id="cert-btn-chain" style="display:none" onclick="cert_downloadChain()">⬇ CHAIN</button>
+
             <button class="btn btn-danger" onclick="cert_reset()">↺ Reset</button>
           </div>
 
@@ -944,26 +984,118 @@
           <div class="form-group" style="margin-top:14px">
             <label>Output</label>
             <div class="output-wrapper">
-              <div class="code-block" id="cert-output" style="min-height:200px;color:#7dd67d;font-size:0.75rem;white-space:pre-wrap">— click Generate —</div>
+              <div class="code-block" id="cert-output-Cert" style="min-height:200px;color:#7dd67d;font-size:0.75rem;white-space:pre-wrap">— click Generate —</div>
               <button class="copy-btn-overlay" onclick="cert_copyActiveOutput()">COPY</button>
             </div>
           </div>
         </div>
 
-        <!-- ================= FROM PFX (Extract) ================= -->
+        <!-- ================= FROM PEM (Convert PEM -> PFX) ================= -->
+        
+        <!-- ================= FROM PEM (Convert PEM -> PFX) ================= -->
+        <div class="inner-content" id="sign-pem-tab">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Base name</label>
+              <input type="text" id="pem2pfx-base" value="certificate" placeholder="certificate" oninput="pem2pfx_updateOpenSSL()" />
+            </div>
+            <div class="form-group">
+              <label>Quick load files</label>
+              <input type="file" id="pem2pfx-bulk-files" multiple accept=".pem,.crt,.cer,.key,.txt" onchange="pem2pfx_loadMultipleFiles(this)" />
+              <div class="hint" style="font-size:0.7rem;color:var(--text-dim)">Selecciona 1 o varios archivos (cert, key, chain). El sistema los ubicará automáticamente.</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Certificate (PEM)</label>
+              <textarea id="pem2pfx-cert" placeholder="-----BEGIN CERTIFICATE-----" oninput="pem2pfx_updateOpenSSL()"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Private Key (PEM)</label>
+              <textarea id="pem2pfx-key" placeholder="-----BEGIN PRIVATE KEY-----" oninput="pem2pfx_updateOpenSSL()"></textarea>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full">
+              <label>CA / Intermediate Certificates</label>
+              <textarea id="pem2pfx-chain" placeholder="-----BEGIN CERTIFICATE----- (optional chain)" oninput="pem2pfx_updateOpenSSL()"></textarea>
+              <div class="hint" style="font-size:0.7rem;color:var(--text-dim)">Si tu certificado depende de intermedios, pégalos aquí (en orden). Para self-signed, déjalo vacío.</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Private key password (optional)</label>
+              <input type="text" id="pem2pfx-key-pass" placeholder="Solo si tu key.pem está cifrada" oninput="pem2pfx_updateOpenSSL()" />
+              <div class="hint" style="font-size:0.7rem;color:var(--text-dim)">Si tu <b>key.pem</b> está cifrada, coloca el password aquí. Si no, déjalo vacío.</div>
+            </div>
+            <div class="form-group">
+              <label>PFX file password</label>
+              <input type="text" id="pem2pfx-pass" placeholder="Password del .pfx" oninput="pem2pfx_updateOpenSSL()" />
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="pem2pfx_generate()"><span>▶</span> Generate PFX</button>
+            <button class="btn btn-secondary" onclick="pem2pfx_download()">⬇ Download PFX</button>
+            <button class="btn btn-secondary" onclick="pem2pfx_clear()">🧹 Clear</button>
+          </div>
+
+          <div class="status-bar" id="pem2pfx-status"></div>
+
+          <div class="form-group" style="margin-top:14px">
+            <label>COMMANDS</label>
+            <div class="output-wrapper">
+              <div class="code-block command-block" id="pem2pfx-openssl-cmd" style="min-height:80px">—</div>
+              <button class="copy-btn-overlay" onclick="copyText('pem2pfx-openssl-cmd')">COPY</button>
+            </div>
+          </div>
+
+        </div>
+
+<!-- ================= FROM PFX (Extract) ================= -->
         <div class="inner-content" id="sign-pfx-tab">
 
           <div class="form-row">
             <div class="form-group">
-              <label>PFX / P12 file</label>
+              <label>PFX FILE</label>
               <input type="text" id="cert-pfx-file-note" value="Use the file picker below" disabled style="opacity:0.7" />
               <input type="file" id="cert-pfx-file" accept=".pfx,.p12,application/x-pkcs12" style="margin-top:8px" />
             </div>
             <div class="form-group">
-              <label>Password (PFX)</label>
+              <label>Password</label>
               <input type="text" id="cert-pfx-extract-pass" placeholder="Password del .pfx" />
             </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Private key password</label>
+              <input type="text" id="cert-extract-outkey-pass" placeholder="Si deseas que la key.pem descargada salga cifrada" />
+              <div class="hint" style="font-size:0.7rem;color:var(--text-dim)">Opcional: si colocas una password aquí, la <b>key.pem</b> extraída se exportará cifrada. Si lo dejas vacío, saldrá sin cifrar.</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Download name (KEY)</label>
+              <input type="text" id="cert-extract-key-name" value="extracted.key.pem" placeholder="extracted.key.pem" />
+            </div>
+            <div class="form-group">
+              <label>Download name (CRT)</label>
+              <input type="text" id="cert-extract-crt-name" value="extracted.crt.pem" placeholder="extracted.crt.pem" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group full">
+              <label>Download name (CHAIN)</label>
+              <input type="text" id="cert-extract-chain-name" value="extracted.chain.pem" placeholder="extracted.chain.pem" />
+            </div>
+          </div>
+
 
           <div class="btn-row">
             <button class="btn btn-primary" onclick="cert_extractPfx()"><span>▶</span> Extract</button>
@@ -976,7 +1108,7 @@
 
           <div class="form-row" style="margin-top:14px">
             <div class="form-group full">
-              <label>OpenSSL (extract)</label>
+              <label>COMMANDS</label>
               <div class="output-wrapper">
                 <div class="code-block command-block" id="cert-extract-openssl" style="min-height:80px">openssl pkcs12 -in archivo.pfx -clcerts -nokeys -out extracted.crt.pem
 openssl pkcs12 -in archivo.pfx -nocerts -out extracted.key.pem
@@ -988,14 +1120,22 @@ openssl pkcs12 -in archivo.pfx -nocerts -nodes -out extracted.key.pem</div>
 
           <div class="form-row" style="margin-top:14px">
             <div class="form-group">
-              <label>Private Key (PEM)</label>
+              <label>Private Key</label>
               <textarea id="cert-extract-key" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
             </div>
             <div class="form-group">
-              <label>Certificate (PEM)</label>
+              <label>Certificate</label>
               <textarea id="cert-extract-crt" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
             </div>
           </div>
+          <div class="form-row" style="margin-top:14px">
+            <div class="form-group full">
+              <label>CA Chain </label>
+              <textarea id="cert-extract-chain" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+              <div class="hint" style="font-size:0.7rem;color:var(--text-dim)">Si el PFX contiene certificados intermedios/CA, aparecerán aquí.</div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -1088,8 +1228,8 @@ openssl pkcs12 -in archivo.pfx -nocerts -nodes -out extracted.key.pem</div>
           <div class="form-group" style="margin-top:14px">
             <label>Validations Results</label>
             <div class="output-wrapper">
-              <div class="code-block" id="cert-output" style="min-height:200px;color:#7dd67d;font-size:0.75rem;max-height:500px;overflow-y:auto">— enter hostname and click Validate Certificate —</div>
-              <button class="copy-btn-overlay" onclick="copyText('cert-output')">COPY</button>
+              <div class="code-block" id="cert-output-ValidatedCert" style="min-height:200px;color:#7dd67d;font-size:0.75rem;max-height:500px;overflow-y:auto">— enter hostname and click Validate Certificate —</div>
+              <button class="copy-btn-overlay" onclick="copyText('cert-output-ValidatedCert')">COPY</button>
             </div>
           </div>
         </div>
@@ -1526,7 +1666,7 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
     async function validateCert() {
       const hostname = document.getElementById('cert-hostname').value.trim();
       const port = document.getElementById('cert-port').value.trim() || '443';
-      const outEl = document.getElementById('cert-output');
+      const outEl = document.getElementById('cert-output-ValidatedCert');
 
       if (!hostname) {
         showStatus('cert-status', 'error', '❌ Please enter a hostname.');
@@ -1741,7 +1881,7 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       document.getElementById('cert-hostname').value = '';
       document.getElementById('cert-port').value = '443';
       document.getElementById('cert-options').selectedIndex = 0;
-      document.getElementById('cert-output').textContent = '— enter hostname and click Validate Certificate —';
+      document.getElementById('cert-output-ValidatedCert').textContent = '— enter hostname and click Validate Certificate —';
       hideStatus('cert-status');
       updateCertCommand();
     }
@@ -2392,14 +2532,19 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       keyPem: '',
       csrPem: '',
       crtPem: '',
-      pfxB64: ''
+      pfxB64: '',
+      caKeyPem: '',
+      caCrtPem: '',
+      chainPem: ''
     };
 
     function cert_init() {
       try {
         cert_updateUI();
+      cert_updateChainUI();
         cert_updateOpenSSL();
         cert_setView('key');
+        pem2pfx_updateOpenSSL();
       } catch (e) {
         // no-op
       }
@@ -2447,6 +2592,36 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       cert_updateOpenSSL();
     }
 
+
+    function cert_updateChainUI() {
+      const enabled = !!document.getElementById('cert-chain-enable')?.checked;
+      const opt = document.getElementById('cert-chain-options');
+      const b1 = document.getElementById('cert-btn-ca-crt');
+      const b2 = document.getElementById('cert-btn-ca-key');
+      const b3 = document.getElementById('cert-btn-chain');
+      if (opt) opt.style.display = enabled ? 'grid' : 'none';
+      // Buttons only make sense after generation, but we show/hide by mode here;
+      // cert_updateUI will also enable/disable depending on content.
+      if (b1) b1.style.display = enabled ? 'inline-flex' : 'none';
+      if (b2) b2.style.display = enabled ? 'inline-flex' : 'none';
+      if (b3) b3.style.display = enabled ? 'inline-flex' : 'none';
+    }
+
+    function cert_downloadCaCrt() {
+      const base = cert_getBaseName();
+      if (!CERT.caCrtPem) return showStatus('certgen-status', 'error', '❌ No CA certificate generated yet.');
+      return cert_downloadText(`${base}.ca.crt.pem`, CERT.caCrtPem);
+    }
+    function cert_downloadCaKey() {
+      const base = cert_getBaseName();
+      if (!CERT.caKeyPem) return showStatus('certgen-status', 'error', '❌ No CA key generated yet.');
+      return cert_downloadText(`${base}.ca.key.pem`, CERT.caKeyPem);
+    }
+    function cert_downloadChain() {
+      const base = cert_getBaseName();
+      if (!CERT.chainPem) return showStatus('certgen-status', 'error', '❌ No chain generated yet.');
+      return cert_downloadText(`${base}.chain.pem`, CERT.chainPem);
+    }
     function cert_getBaseName() {
       const v = (document.getElementById('cert-base')?.value || 'certificate').trim() || 'certificate';
       return v.replace(/[^\w.-]+/g, '_');
@@ -2526,6 +2701,9 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       const base = cert_getBaseName();
       const hash = cert_getHashOpenSSLFlag();
       const hasExistingKey = ((document.getElementById('cert-existing-key')?.value || '').trim().startsWith('-----BEGIN'));
+      const chainEnabled = !!document.getElementById('cert-chain-enable')?.checked;
+      const caCn = (document.getElementById('cert-ca-cn')?.value || 'UTH Class CA').trim() || 'UTH Class CA';
+      const caDays = parseInt(document.getElementById('cert-ca-days')?.value || '3650', 10) || 3650;
 
       const subj = (() => {
         const s = cert_getSubject();
@@ -2540,7 +2718,9 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
         return parts.length ? parts.join('') : '/CN=example.com';
       })();
 
-      const lines = [];
+      const subjCA = subj.replace(/\/CN=[^\/\"]+/, `/CN=${caCn.replace(/\"/g,'\\"')}`);
+
+const lines = [];
       if (type === 'csr') {
         lines.push(`# CSR (KEY + CSR)`);
         if (hasExistingKey) {
@@ -2559,8 +2739,57 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
         lines.push(`# Inspeccionar CSR`);
         lines.push(`openssl req -in ${base}.csr.pem -noout -text`);
       } else {
-        lines.push(`# Self-Signed (KEY + CRT)`);
-        if (hasExistingKey) {
+        if (chainEnabled) {
+          lines.push(`# Chain (CA + Leaf)`);
+          lines.push(`# 1) Generar CA (KEY + CRT)`);
+          lines.push(`openssl req -x509 -newkey rsa:${bits} -${hash} -nodes \\`);
+          lines.push(`  -keyout ${base}.ca.key.pem \\`);
+          lines.push(`  -out ${base}.ca.crt.pem \\`);
+          lines.push(`  -days ${caDays} \\`);
+          lines.push(`  -subj "${subjCA}"`);
+          lines.push('');
+          lines.push(`# 2) Generar Leaf (KEY + CSR)`);
+          if (hasExistingKey) {
+            lines.push(`#    Usa clave existente: ${base}.key.pem`);
+            lines.push(`openssl req -new -${hash} \\`);
+            lines.push(`  -key ${base}.key.pem \\`);
+            lines.push(`  -out ${base}.csr.pem \\`);
+            lines.push(`  -subj "${subj}"`);
+          } else {
+            lines.push(`openssl req -new -newkey rsa:${bits} -${hash} -nodes \\`);
+            lines.push(`  -keyout ${base}.key.pem \\`);
+            lines.push(`  -out ${base}.csr.pem \\`);
+            lines.push(`  -subj "${subj}"`);
+          }
+          lines.push('');
+          lines.push(`# 3) Firmar Leaf con la CA`);
+          lines.push(`openssl x509 -req -${hash} \\`);
+          lines.push(`  -in ${base}.csr.pem \\`);
+          lines.push(`  -CA ${base}.ca.crt.pem \\`);
+          lines.push(`  -CAkey ${base}.ca.key.pem \\`);
+          lines.push(`  -CAcreateserial \\`);
+          lines.push(`  -out ${base}.crt.pem \\`);
+          lines.push(`  -days ${days}`);
+          lines.push('');
+          lines.push(`# 4) Crear CHAIN (leaf + CA)`);
+          lines.push(`cat ${base}.crt.pem ${base}.ca.crt.pem > ${base}.chain.pem`);
+          lines.push('');
+          lines.push(`# Inspeccionar certificado leaf`);
+          lines.push(`openssl x509 -in ${base}.crt.pem -noout -text`);
+
+          if (fmt === 'pfx') {
+            lines.push('');
+            lines.push(`# 5) Exportar a PFX (incluye cadena)`);
+            lines.push(`openssl pkcs12 -export \\`);
+            lines.push(`  -inkey ${base}.key.pem \\`);
+            lines.push(`  -in ${base}.crt.pem \\`);
+            lines.push(`  -certfile ${base}.ca.crt.pem \\`);
+            lines.push(`  -name "${base}" \\`);
+            lines.push(`  -out ${base}.pfx`);
+          }
+        } else {
+          lines.push(`# Self-Signed (KEY + CRT)`);
+if (hasExistingKey) {
           lines.push(`# 1) Guarda tu clave como: ${base}.key.pem`);
           lines.push(`openssl req -x509 -new -${hash} \\`);
           lines.push(`  -key ${base}.key.pem \\`);
@@ -2589,6 +2818,8 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
         }
       }
 
+        }
+
       box.textContent = lines.join('\n');
     }
 
@@ -2602,13 +2833,13 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
         el.classList.toggle('active', t === view);
       }
 
-      const out = document.getElementById('cert-output');
+      const out = document.getElementById('cert-output-Cert');
       if (!out) return;
 
       if (view === 'key') out.textContent = CERT.keyPem || '—';
       if (view === 'csr') out.textContent = CERT.csrPem || '—';
       if (view === 'crt') out.textContent = CERT.crtPem || '—';
-      if (view === 'pfx') out.textContent = CERT.pfxB64 ? `# PFX (Base64)\n${CERT.pfxB64}` : '—';
+      if (view === 'pfx') out.textContent = CERT.pfxB64 ? '✅ PFX generado. Usa "Download" para guardar el archivo.' : '—';
 
       // Ajuste visual: si no hay data aún
       if ((view === 'key' && !CERT.keyPem) ||
@@ -2635,15 +2866,23 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       document.getElementById('cert-base').value = 'certificate';
       document.getElementById('cert-pfx-pass').value = 'changeit';
       document.getElementById('cert-existing-key').value = '';
+      const ce = document.getElementById('cert-chain-enable'); if (ce) ce.checked = false;
+      const caCN = document.getElementById('cert-ca-cn'); if (caCN) caCN.value = 'UTH Class CA';
+      const caDays = document.getElementById('cert-ca-days'); if (caDays) caDays.value = '3650';
 
       CERT.keyPem = '';
+      CERT.caKeyPem = '';
+      CERT.caCrtPem = '';
+      CERT.chainPem = '';
+
       CERT.csrPem = '';
       CERT.crtPem = '';
       CERT.pfxB64 = '';
 
       cert_updateUI();
+      cert_updateChainUI();
       cert_setView('key');
-      const out = document.getElementById('cert-output');
+      const out = document.getElementById('cert-output-Cert');
       if (out) out.textContent = '— click Generate —';
       hideStatus('certgen-status');
     }
@@ -2681,6 +2920,80 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
         CERT.csrPem = '';
         CERT.crtPem = '';
         CERT.pfxB64 = '';
+
+        CERT.caKeyPem = '';
+        CERT.caCrtPem = '';
+        CERT.chainPem = '';
+
+        const chainEnabled = !!document.getElementById('cert-chain-enable')?.checked;
+
+        if (type === 'self' && chainEnabled) {
+          // Generate CA (generic) and sign leaf with CA
+          const caCn = (document.getElementById('cert-ca-cn')?.value || 'UTH Class CA').trim() || 'UTH Class CA';
+          const caDays = parseInt(document.getElementById('cert-ca-days')?.value || '3650', 10) || 3650;
+
+          // CA keypair uses same RSA bits selected by user
+          const caKeys = forge.pki.rsa.generateKeyPair(rsaBits);
+          const caPrivateKey = caKeys.privateKey;
+
+          const caCert = forge.pki.createCertificate();
+          caCert.publicKey = caKeys.publicKey;
+          caCert.serialNumber = cert_randomSerialHex();
+
+          const now2 = new Date();
+          caCert.validity.notBefore = now2;
+          caCert.validity.notAfter = new Date(now2.getTime() + caDays * 24 * 60 * 60 * 1000);
+
+          const leafAttrs = cert_subjectAttrs(subject);
+          const caAttrs = leafAttrs.map(a => ({...a}));
+          const cnIdx = caAttrs.findIndex(a => a.name === 'commonName');
+          if (cnIdx >= 0) caAttrs[cnIdx].value = caCn;
+          else caAttrs.push({ name: 'commonName', value: caCn });
+
+          caCert.setSubject(caAttrs);
+          caCert.setIssuer(caAttrs);
+          // Nota: por requerimiento de clase, NO agregamos extensiones "reales" de CA.
+          caCert.setExtensions([{ name: 'subjectKeyIdentifier' }]);
+          caCert.sign(caPrivateKey, md);
+
+          // Leaf cert (signed by CA)
+          const leafCert = forge.pki.createCertificate();
+          leafCert.publicKey = publicKey; // uses existing or generated leaf key
+          leafCert.serialNumber = cert_randomSerialHex();
+          leafCert.validity.notBefore = now2;
+          leafCert.validity.notAfter = new Date(now2.getTime() + days * 24 * 60 * 60 * 1000);
+
+          leafCert.setSubject(leafAttrs);
+          leafCert.setIssuer(caCert.subject.attributes);
+          leafCert.setExtensions(cert_leafExtensions());
+          leafCert.sign(caPrivateKey, md);
+
+          CERT.crtPem = forge.pki.certificateToPem(leafCert);
+          CERT.caKeyPem = forge.pki.privateKeyToPem(caPrivateKey);
+          CERT.caCrtPem = forge.pki.certificateToPem(caCert);
+          CERT.chainPem = CERT.crtPem + '\n' + CERT.caCrtPem;
+
+          if (format === 'pfx') {
+            if (!pfxPass) throw new Error('Ingresa Password (PFX).');
+            const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
+              privateKey,
+              [leafCert, caCert],
+              pfxPass,
+              { algorithm: '3des', friendlyName: base }
+            );
+            const der = forge.asn1.toDer(p12Asn1).getBytes();
+            CERT.pfxB64 = forge.util.encode64(der);
+            cert_updateUI();
+            cert_setView('pfx');
+            showStatus(statusId, 'success', `✅ Chain generado y exportado a PFX (${base}.pfx).`);
+            return;
+          }
+
+          cert_updateUI();
+          cert_setView('crt');
+          showStatus(statusId, 'success', `✅ Chain generado (${base}.key.pem / ${base}.crt.pem + CA/CHAIN).`);
+          return;
+        }
 
         if (type === 'csr') {
           const csr = forge.pki.createCertificationRequest();
@@ -2739,7 +3052,7 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
     }
 
     function cert_copyActiveOutput() {
-      const out = document.getElementById('cert-output');
+      const out = document.getElementById('cert-output-Cert');
       if (!out) return;
       const t = (out.textContent || '').trim();
       if (!t || t === '—') return;
@@ -2814,17 +3127,34 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
           p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag];
 
         if (!keyBags || !keyBags.length) throw new Error('No se encontró private key (password incorrecta o PFX sin clave).');
-        const keyPem = forge.pki.privateKeyToPem(keyBags[0].key);
+        const outKeyPass = document.getElementById('cert-extract-outkey-pass')?.value || '';
+        let keyPem;
+        if (outKeyPass && keyBags[0].key && typeof keyBags[0].key.n !== 'undefined') {
+          // RSA key: export encrypted PEM (Traditional OpenSSL / PKCS#1)
+          keyPem = forge.pki.encryptRsaPrivateKey(keyBags[0].key, outKeyPass, { algorithm: 'aes256' });
+        } else {
+          // Default: unencrypted PEM
+          keyPem = forge.pki.privateKeyToPem(keyBags[0].key);
+        }
 
         // Cert
         const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
         if (!certBags || !certBags.length) throw new Error('No se encontró certificado en el PFX.');
-        const certPem = forge.pki.certificateToPem(certBags[0].cert);
+        const leafCert = certBags[0].cert;
+        const certPem = forge.pki.certificateToPem(leafCert);
+
+        // Chain (remaining certs if present)
+        const chainPem = certBags.slice(1).map(b => {
+          try { return forge.pki.certificateToPem(b.cert); } catch { return ''; }
+        }).filter(Boolean).join('\n');
 
         document.getElementById('cert-extract-key').value = keyPem;
         document.getElementById('cert-extract-crt').value = certPem;
+        const chainEl = document.getElementById('cert-extract-chain');
+        if (chainEl) chainEl.value = chainPem;
 
-        showStatus(statusId, 'success', '✅ Extracted successfully!');
+        const chainCount = (chainPem.match(/-----BEGIN CERTIFICATE-----/g) || []).length;
+        showStatus(statusId, 'success', `✅ Extracted. Chain certs: ${chainCount}${(outKeyPass ? ' | Key: ' + (keyPem.includes('ENCRYPTED') ? 'encrypted' : 'plain') : '')}`);
       } catch (e) {
         showStatus('certextract-status', 'error', '❌ ' + (e?.message || 'Error'));
       }
@@ -2838,29 +3168,295 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       showStatus('certextract-status', 'success', '✅ Copied!');
     }
 
-    function cert_downloadExtract() {
-      const key = document.getElementById('cert-extract-key')?.value || '';
-      const crt = document.getElementById('cert-extract-crt')?.value || '';
-      if (!key && !crt) return showStatus('certextract-status', 'error', '❌ Nothing to download.');
-      if (key) cert_downloadText('extracted.key.pem', key);
-      if (crt) cert_downloadText('extracted.crt.pem', crt);
-      showStatus('certextract-status', 'success', '⬇ PEMs downloaded.');
-    }
+    function cert_downloadExtract(){
+  const keyPem = (document.getElementById('cert-extract-key')?.value || '').trim();
+  const crtPem = (document.getElementById('cert-extract-crt')?.value || '').trim();
+  const chainPem = (document.getElementById('cert-extract-chain')?.value || '').trim();
+
+  const keyName = sanitizeFilename(document.getElementById('cert-extract-key-name')?.value || 'extracted.key.pem');
+  const crtName = sanitizeFilename(document.getElementById('cert-extract-crt-name')?.value || 'extracted.crt.pem');
+  const chainName = sanitizeFilename(document.getElementById('cert-extract-chain-name')?.value || 'extracted.chain.pem');
+
+  if(!keyPem && !crtPem && !chainPem){
+    showStatus('certextract-status','error','No hay datos para descargar.');
+    return;
+  }
+  if(keyPem) downloadTextFile(keyName, keyPem);
+  if(crtPem) downloadTextFile(crtName, crtPem);
+  if(chainPem) downloadTextFile(chainName, chainPem);
+
+  showStatus('certextract-status','success','⬇ Descargas listas.');
+}
 
     function cert_resetExtract() {
       document.getElementById('cert-pfx-file').value = '';
       document.getElementById('cert-pfx-extract-pass').value = '';
+      const outp = document.getElementById('cert-extract-outkey-pass');
+      if (outp) outp.value = '';
       document.getElementById('cert-extract-key').value = '';
       document.getElementById('cert-extract-crt').value = '';
+      const chainEl = document.getElementById('cert-extract-chain');
+      if (chainEl) chainEl.value = '';
+      const kn = document.getElementById('cert-extract-key-name');
+      const cn = document.getElementById('cert-extract-crt-name');
+      if (kn) kn.value = 'extracted.key.pem';
+      if (cn) cn.value = 'extracted.crt.pem';
       hideStatus('certextract-status');
     }
+
+// ================= PEM -> PFX (From PEM converter) =================
+    const PEM2PFX = {
+      pfxB64: ''
+    };
+
+    
+
+    function pem2pfx_sanitizeFilename(name, fallback) {
+      const v = (name || '').trim() || (fallback || 'file.pem');
+      return v.replace(/[^\w.\-]+/g, '_');
+    }
+
+    function pem2pfx_parsePrivateKey(pem, password) {
+      // Try plain PEM first
+      try { return forge.pki.privateKeyFromPem(pem); } catch (e) {}
+
+      const pass = (password || '').toString();
+      if (!pass) throw new Error('Private key is encrypted. Provide Private key password.');
+
+      // Try legacy encrypted RSA key (BEGIN RSA PRIVATE KEY with Proc-Type)
+      try {
+        const k = forge.pki.decryptRsaPrivateKey(pem, pass);
+        if (k) return k;
+      } catch (e) {}
+
+      // Try PKCS#8 encrypted key (BEGIN ENCRYPTED PRIVATE KEY)
+      try {
+        const encInfo = forge.pki.encryptedPrivateKeyFromPem(pem);
+        const info = forge.pki.decryptPrivateKeyInfo(encInfo, pass);
+        return forge.pki.privateKeyFromAsn1(info.privateKey);
+      } catch (e) {}
+
+      throw new Error('Unable to decrypt private key (wrong password or unsupported format).');
+    }
+
+    function pem2pfx_loadFileToTextarea(fileInputId, textareaId) {
+      const fi = document.getElementById(fileInputId);
+      const ta = document.getElementById(textareaId);
+      if (!fi || !ta || !fi.files || !fi.files[0]) return;
+
+      const f = fi.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        ta.value = (reader.result || '').toString();
+        pem2pfx_updateOpenSSL();
+      };
+      reader.readAsText(f);
+    }
+
+    function pem2pfx_loadMultipleFiles(inputEl) {
+      const files = Array.from(inputEl?.files || []);
+      if (!files.length) return;
+
+      // naive auto-detect by filename/content
+      const readOne = (file) => new Promise((res) => {
+        const r = new FileReader();
+        r.onload = () => res({ name: file.name, text: (r.result || '').toString() });
+        r.readAsText(file);
+      });
+
+      Promise.all(files.map(readOne)).then(items => {
+        for (const it of items) {
+          const t = it.text.trim();
+          if (!t) continue;
+
+          if (t.includes('BEGIN CERTIFICATE')) {
+            // If cert textarea empty -> leaf, else append to chain
+            const certTA = document.getElementById('pem2pfx-cert');
+            const chainTA = document.getElementById('pem2pfx-chain');
+            if (certTA && (!certTA.value.trim())) certTA.value = t;
+            else if (chainTA) chainTA.value = (chainTA.value.trim() ? (chainTA.value.trim() + '\n') : '') + t;
+          } else if (t.includes('BEGIN PRIVATE KEY') || t.includes('BEGIN RSA PRIVATE KEY') || t.includes('BEGIN ENCRYPTED PRIVATE KEY')) {
+            const keyTA = document.getElementById('pem2pfx-key');
+            if (keyTA) keyTA.value = t;
+          }
+        }
+        pem2pfx_updateOpenSSL();
+      });
+    }
+
+function pem2pfx_getBase() {
+      const v = (document.getElementById('pem2pfx-base')?.value || 'certificate').trim() || 'certificate';
+      return v.replace(/[^\w.-]+/g, '_');
+    }
+
+    function pem2pfx_countCerts(pemText) {
+      const m = (pemText || '').match(/-----BEGIN CERTIFICATE-----/g);
+      return m ? m.length : 0;
+    }
+
+    function pem2pfx_splitCerts(pemText) {
+      const text = (pemText || '').trim();
+      if (!text) return [];
+      // divide into individual cert PEM blocks
+      const blocks = text.split(/(?=-----BEGIN CERTIFICATE-----)/g).map(s => s.trim()).filter(Boolean);
+      return blocks.filter(b => b.includes('-----BEGIN CERTIFICATE-----') && b.includes('-----END CERTIFICATE-----'));
+    }
+
+    function pem2pfx_matchCertKey_RSA(certPem, keyPem, keyPass) {
+      try {
+        const cert = forge.pki.certificateFromPem(certPem);
+        const key = pem2pfx_parsePrivateKey(keyPem, keyPass);
+
+        // RSA only (n,e)
+        const pub = cert.publicKey;
+        if (!pub || typeof pub.n === 'undefined' || typeof pub.e === 'undefined') return { ok: null, msg: 'Match check: not RSA (skipped).' };
+        if (!key || typeof key.n === 'undefined' || typeof key.e === 'undefined') return { ok: null, msg: 'Match check: not RSA (skipped).' };
+
+        const ok = pub.n.compareTo(key.n) === 0 && pub.e.compareTo(key.e) === 0;
+        return ok
+          ? { ok: true, msg: '✅ Certificate matches Private Key (RSA).' }
+          : { ok: false, msg: '❌ Certificate does NOT match Private Key.' };
+      } catch (e) {
+        return { ok: null, msg: 'Match check: unable to verify (invalid PEM or wrong key password?).' };
+      }
+    }
+
+    function pem2pfx_updateOpenSSL() {
+      const cmdEl = document.getElementById('pem2pfx-openssl-cmd');
+      if (!cmdEl) return;
+
+      const base = pem2pfx_getBase();
+      const pass = (document.getElementById('pem2pfx-pass')?.value || '').trim();
+      const keyPass = (document.getElementById('pem2pfx-key-pass')?.value || '').trim();
+      const certPem = (document.getElementById('pem2pfx-cert')?.value || '').trim();
+      const keyPem  = (document.getElementById('pem2pfx-key')?.value || '').trim();
+      const chainPem = (document.getElementById('pem2pfx-chain')?.value || '').trim();
+
+      const certCount = pem2pfx_countCerts(chainPem);
+      const lines = [];
+      lines.push(`# OpenSSL (PEM -> PFX)`);
+      lines.push(`# 1) Guarda tus PEM en archivos:`);
+      lines.push(`#    - ${base}.crt.pem  (certificado)`);
+      lines.push(`#    - ${base}.key.pem  (private key)`);
+      if (chainPem) lines.push(`#    - ${base}.chain.pem  (CA / intermedios)`);
+      lines.push('');
+      lines.push(`# 2) Genera el PFX (PKCS#12):`);
+      const certfile = chainPem ? `  -certfile ${base}.chain.pem \\\n` : '';
+      lines.push(`openssl pkcs12 -export \\`);
+      lines.push(`  -in ${base}.crt.pem \\`);
+      lines.push(`  -inkey ${base}.key.pem \\`);
+      if (chainPem) lines.push(`  -certfile ${base}.chain.pem \\`);
+      lines.push(`  -name "${base}" \\`);
+      lines.push(`  -out ${base}.pfx`);
+
+      if (pass) {
+        lines.push('');
+        lines.push(`# (Opcional) fijar password:`);
+        lines.push(`# openssl pkcs12 -export -in ${base}.crt.pem -inkey ${base}.key.pem ${chainPem ? '-certfile '+base+'.chain.pem ' : ''}-name \"${base}\" -out ${base}.pfx ${keyPass ? '-passin pass:'+keyPass+' ' : ''}-passout pass:${pass}`);
+      }
+
+      // Small live notes (no cambia diseño, solo texto)
+      const notes = [];
+      const looksEncrypted = /BEGIN ENCRYPTED PRIVATE KEY|ENCRYPTED/i.test(keyPem);
+      if (looksEncrypted && !keyPass) notes.push('• Private Key cifrada detectada: ingresa Private key password.');
+      if (!certPem) notes.push('• Falta Certificate (PEM).');
+      if (!keyPem) notes.push('• Falta Private Key (PEM).');
+      if (keyPass) notes.push('• Private Key password detectada (se usará para descifrar la key).');
+      if (chainPem) notes.push(`• CA detectado (${certCount || 0} cert).`);
+
+      cmdEl.textContent = lines.join('\n') + (notes.length ? `\n\n# Estado\n${notes.join('\n')}` : '');
+    }
+
+    function pem2pfx_clear() {
+      document.getElementById('pem2pfx-base').value = 'certificate';
+      document.getElementById('pem2pfx-pass').value = '';
+      document.getElementById('pem2pfx-cert').value = '';
+      document.getElementById('pem2pfx-key').value = '';
+      document.getElementById('pem2pfx-chain').value = '';
+      PEM2PFX.pfxB64 = '';
+      hideStatus('pem2pfx-status');
+      pem2pfx_updateOpenSSL();
+    }
+
+    function pem2pfx_download() {
+      if (!PEM2PFX.pfxB64) return showStatus('pem2pfx-status', 'error', '❌ No PFX to download.');
+      const base = pem2pfx_getBase();
+      const raw = atob(PEM2PFX.pfxB64);
+      const arr = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      const blob = new Blob([arr], { type: 'application/x-pkcs12' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${base}.pfx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+      showStatus('pem2pfx-status', 'success', '⬇ PFX downloaded.');
+    }
+
+    function pem2pfx_generate() {
+      try {
+        const certPem = (document.getElementById('pem2pfx-cert')?.value || '').trim();
+        const keyPem  = (document.getElementById('pem2pfx-key')?.value || '').trim();
+        const chainPem = (document.getElementById('pem2pfx-chain')?.value || '').trim();
+        const pass = (document.getElementById('pem2pfx-pass')?.value || '').toString();
+        const keyPass = (document.getElementById('pem2pfx-key-pass')?.value || '').toString();
+        const base = pem2pfx_getBase();
+
+        if (!certPem) return showStatus('pem2pfx-status', 'error', '❌ Certificate (PEM) is required.');
+        if (!keyPem) return showStatus('pem2pfx-status', 'error', '❌ Private Key (PEM) is required.');
+        if (!pass) return showStatus('pem2pfx-status', 'error', '❌ PFX file password is required.');
+
+        // Match check (RSA) when possible
+        const match = pem2pfx_matchCertKey_RSA(certPem, keyPem, keyPass);
+        if (match.ok === false) return showStatus('pem2pfx-status', 'error', match.msg);
+        if (match.ok === null) showStatus('pem2pfx-status', 'info', match.msg);
+
+        const key = pem2pfx_parsePrivateKey(keyPem, keyPass);
+        const leaf = forge.pki.certificateFromPem(certPem);
+
+        const chainCerts = pem2pfx_splitCerts(chainPem).map(p => {
+          try { return forge.pki.certificateFromPem(p); } catch { return null; }
+        }).filter(Boolean);
+
+        const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
+          key,
+          [leaf, ...chainCerts],
+          pass,
+          { algorithm: '3des', friendlyName: base }
+        );
+
+        const der = forge.asn1.toDer(p12Asn1).getBytes();
+        PEM2PFX.pfxB64 = forge.util.encode64(der);
+
+        showStatus('pem2pfx-status', 'success', `✅ PFX generado. Listo para descargar (${base}.pfx). Chain certs: ${chainCerts.length}`);
+      } catch (e) {
+        showStatus('pem2pfx-status', 'error', '❌ ' + (e?.message || 'Failed to generate PFX.'));
+      }
+    }
+   
+    
 
     // Auto-init (no rompe tu listener existente)
     window.addEventListener('DOMContentLoaded', () => cert_init());
 
 
-
-  </script>
+function sanitizeFilename(name){
+  return String(name || '').trim().replace(/[^\w.-]+/g,'_') || 'output.pem';
+}
+function downloadTextFile(filename, content){
+  const blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 300);
+}
+</script>
 </body>
 
 </html>
