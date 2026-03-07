@@ -28,7 +28,7 @@ Aplicación web educativa para **criptografía aplicada** que funciona **100% en
 
 ## Descripción
 
-**UTH CryptoLab** es una **aplicación web estática** (un solo `index.html`) que integra interfaz, estilos y lógica en un único archivo: **HTML + CSS + JavaScript**.
+**UTH CipherStudio** es una **aplicación web estática** (un solo `index.html`) que integra interfaz, estilos y lógica en un único archivo: **HTML + CSS + JavaScript**.
 
 La app permite ejecutar operaciones criptográficas de forma interactiva, mostrando resultados (PEM/Base64) y, en algunos casos, comandos equivalentes en **OpenSSL** para fines didácticos.
 
