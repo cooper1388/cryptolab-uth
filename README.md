@@ -1,226 +1,208 @@
-# UTH CryptoLab
+# CryptoLab UTH
 
-**UTH CryptoLab** es un **proyecto colaborativo** desarrollado como parte de la **Maestría en Ciberseguridad de la UTH (Universidad Tecnológica de Honduras)**.
+Aplicación web educativa para **criptografía aplicada** que funciona **100% en el navegador** (sin servidor), desarrollada como **proyecto colaborativo** de la **Maestría en Ciberseguridad de la UTH (Universidad Tecnológica de Honduras)**.
 
-Consiste en una **aplicación web estática** (un único `index.html`) que integra **interfaz + estilos + lógica** (HTML/CSS/JavaScript) para ejecutar laboratorios y demostraciones de conceptos de criptografía **directamente en el navegador**, apoyándose en la **Web Crypto API**.
+> Enfoque: laboratorio/demostración. No está pensada como herramienta de producción.
 
 ---
 
 ## Tabla de contenido
 
-- [Acerca del proyecto](#acerca-del-proyecto)
-- [Características principales](#características-principales)
+- [Descripción](#descripción)
+- [Características](#características)
 - [Tecnologías](#tecnologías)
-- [Cómo funciona (arquitectura)](#cómo-funciona-arquitectura)
-- [Módulos / funcionalidades](#módulos--funcionalidades)
-  - [Generación de pares de claves](#1-generación-de-pares-de-claves)
-  - [Extracción de clave pública](#2-extracción-de-clave-pública)
-  - [Firmas digitales y verificación](#3-firmas-digitales-y-verificación)
-  - [Criptografía simétrica (AES)](#4-criptografía-simétrica-aes)
-  - [Validación de certificados TLS/SSL](#5-validación-de-certificados-tlsssl)
-- [Ejecución](#ejecución)
+- [Cómo funciona](#cómo-funciona)
+- [Módulos de la aplicación](#módulos-de-la-aplicación)
+  - [1) Generación de par de llaves](#1-generación-de-par-de-llaves)
+  - [2) Extracción de llave pública](#2-extracción-de-llave-pública)
+  - [3) Firmas digitales y verificación](#3-firmas-digitales-y-verificación)
+  - [4) Cifrado/descifrado simétrico (AES)](#4-cifradorescifrado-simétrico-aes)
+  - [5) Validación de certificados TLS/SSL](#5-validación-de-certificados-tlsssl)
+- [Ejecución (cómo correrlo)](#ejecución-cómo-correrlo)
 - [Estructura del repositorio](#estructura-del-repositorio)
-- [Seguridad, alcance y limitaciones](#seguridad-alcance-y-limitaciones)
-- [Contribución (Maestría UTH)](#contribución-maestría-uth)
+- [Seguridad, privacidad y limitaciones](#seguridad-privacidad-y-limitaciones)
+- [Contribución (proyecto colaborativo UTH)](#contribución-proyecto-colaborativo-uth)
 - [Créditos](#créditos)
-- [Licencia](#licencia)
 
 ---
 
-## Acerca del proyecto
+## Descripción
 
-Este repositorio tiene como objetivo servir como **laboratorio práctico** para:
-- comprender conceptos de criptografía aplicada,
-- experimentar con generación de claves, cifrado, firmas,
-- y reforzar fundamentos de PKI/certificados.
+**UTH CryptoLab** es una **aplicación web estática** (un solo `index.html`) que integra interfaz, estilos y lógica en un único archivo: **HTML + CSS + JavaScript**.
 
-Está orientado a fines **educativos** y a trabajo en equipo (issues, mejoras incrementales, revisión por pares).
+La app permite ejecutar operaciones criptográficas de forma interactiva, mostrando resultados (PEM/Base64) y, en algunos casos, comandos equivalentes en **OpenSSL** para fines didácticos.
 
 ---
 
-## Características principales
+## Características
 
-- Interfaz tipo “paneles” para ejecutar distintas operaciones criptográficas.
-- Funciona **sin backend**: solo abres el HTML y lo utilizas.
-- Uso de **Web Crypto API** para operaciones soportadas por el navegador.
-- Sección educativa para **verificación de cadena de certificados** y **validación de hostname**.
-- Permite **copiar resultados** y **descargar llaves** (PEM) generadas.
+- Interfaz por **paneles** (expandibles) para organizar los laboratorios.
+- Ejecución local: utiliza **Web Crypto API** (`crypto.subtle`) para operaciones soportadas.
+- Exportación de llaves a **PEM** (PKCS#8 privada / SPKI pública) y resultados en **Base64**.
+- Botones de **copiar al portapapeles** y **descargar** llaves en `.pem`.
+- Sección educativa de certificados con:
+  - validación “en vivo” (pruebas desde el navegador),
+  - verificación de cadena (parsing simplificado y guía de OpenSSL).
 
 ---
 
 ## Tecnologías
 
-- **HTML5 + CSS3 + JavaScript** en un solo archivo.
-- **Web Crypto API** (`crypto.subtle`) para:
-  - generación de claves (RSA y EC),
-  - cifrado/descifrado (RSA-OAEP),
-  - firma/verificación (RSASSA-PKCS1-v1_5, RSA-PSS),
-  - derivación de claves con PBKDF2,
-  - cifrado simétrico AES (GCM/CBC).
-- Sin frameworks, sin dependencias de build.
+- **HTML5 / CSS3 / JavaScript**
+- **Web Crypto API**
+- Tipografías web (Google Fonts)
+
+No requiere:
+- Node.js
+- dependencias
+- build tools
+- backend
 
 ---
 
-## Cómo funciona (arquitectura)
+## Cómo funciona
 
-La aplicación vive en un único archivo:
+### Arquitectura (alto nivel)
 
-- **UI (HTML)**: paneles para cada módulo.
-- **Estilos (CSS interno)**: tema “hacker/terminal” con componentes reutilizables.
-- **Lógica (JS interno)**:
-  - mantiene estado global mínimo (por ejemplo, tipo de clave actual),
-  - invoca Web Crypto API,
-  - exporta/importa llaves en formatos estándar (PKCS#8 para privadas, SPKI para públicas),
-  - convierte resultados a **PEM** o **Base64** según corresponda,
-  - muestra estados (info/success/error) y permite copiar/descargar.
+1. **UI (HTML)**: formularios y salidas por módulo.
+2. **Estado (JS)**: variables globales mínimas (p. ej. `currentKeyType`).
+3. **Criptografía (Web Crypto API)**:
+   - generación de claves,
+   - importación/exportación,
+   - cifrado/descifrado,
+   - firma/verificación,
+   - derivación de claves para AES con PBKDF2.
+4. **Presentación de resultados**:
+   - PEM para llaves,
+   - Base64 para firmas/cifrados,
+   - mensajes de estado (info/success/error).
 
-La app enfatiza que:
-- muchas operaciones corren “localmente” en el navegador,
-- y se muestran comandos equivalentes de **OpenSSL** con fines educativos (para reproducir en terminal).
+### Formatos usados
+
+- **Private Key**: PKCS#8 (`-----BEGIN PRIVATE KEY-----`)
+- **Public Key**: SPKI (`-----BEGIN PUBLIC KEY-----`)
+- **Firmas / ciphertext**: Base64
+- **AES**: formato `iv:ciphertext` en Base64
 
 ---
 
-## Módulos / funcionalidades
+## Módulos de la aplicación
 
-### 1) Generación de pares de claves
+### 1) Generación de par de llaves
 
-Permite elegir el tipo de clave desde pestañas:
+Permite seleccionar el tipo de llave:
 
-- **RSA** (clásico): tamaños 2048/3072/4096
-- **EC / Elliptic Curves** (clásico): P-256 / P-384 / P-521
+- **RSA**: 2048 / 3072 / 4096 bits  
+- **EC (Curvas elípticas)**: P-256 / P-384 / P-521  
 - **ML-KEM** (post-cuántico) y **ML-DSA** (post-cuántico):  
-  Actualmente **se simulan** porque los navegadores (Web Crypto API) aún no soportan estos algoritmos de forma nativa.
+  se **simulan** porque actualmente no hay soporte nativo en navegadores vía Web Crypto API.
 
 Salida:
-- exporta y muestra **Private Key** y **Public Key** en formato **PEM**.
-- opción para **descargar** un `.pem`.
+- muestra privada + pública en PEM
+- permite copiar y descargar el `.pem`
 
-> Nota: el panel también muestra un “comando OpenSSL” equivalente como referencia, aunque la generación real en el navegador usa Web Crypto API (y no ejecuta OpenSSL).
+También se muestra un **comando OpenSSL equivalente** (con fines de referencia/estudio).
 
 ---
 
-### 2) Extracción de clave pública
+### 2) Extracción de llave pública
 
-Intenta obtener la clave pública a partir de una privada pegada en el formulario.
+Permite pegar una llave privada (PEM) e intentar obtener la pública.
 
-Limitación importante (educativa):
-- En Web Crypto API, **no siempre es posible derivar/reconstruir** la clave pública únicamente desde un PKCS#8 “crudo” importado.
-- La app permite la extracción si la clave corresponde a una clave generada **en esa misma sesión** (usa referencias guardadas).
+**Limitación importante (educativa):** Web Crypto API no garantiza poder extraer la pública desde cualquier PKCS#8 importado. La app funciona mejor cuando la llave fue generada dentro de la misma sesión (porque conserva referencias internas).
 
 ---
 
 ### 3) Firmas digitales y verificación
 
-Firma:
-- firma un mensaje con una **clave privada PEM**.
-- soporta:
-  - **PKCS#1 v1.5**
-  - **RSA-PSS**
-- hashes disponibles: **SHA-256 / SHA-384 / SHA-512**
-- salida: firma en **Base64**
+**Firmar**
+- Entrada: mensaje + llave privada PEM
+- Hash: SHA-256 / SHA-384 / SHA-512
+- Formato: PKCS#1 v1.5 o RSA-PSS
+- Salida: firma en Base64
 
-Verificación:
-- verifica la firma con el mensaje original + firma Base64 + clave pública PEM.
-- muestra resultado (válida / inválida) en la barra de estado.
+**Verificar**
+- Entrada: mensaje original + firma Base64 + llave pública PEM
+- Salida: válido / inválido (con mensaje explicativo)
 
 ---
 
-### 4) Criptografía simétrica (AES)
+### 4) Cifrado/descifrado simétrico (AES)
 
-La app incluye cifrado/descifrado simétrico usando una contraseña:
-- deriva una clave con **PBKDF2** (con salt fijo educativo e iteraciones).
-- soporta **AES-GCM** o **AES-CBC** (según lo expuesto por la UI).
-- formato de salida para cifrado: `iv:ciphertext` en Base64.
+La app incluye cifrado simétrico usando una contraseña:
+
+- Deriva una llave con **PBKDF2**
+- Soporta modos según UI (por ejemplo **AES-GCM** / **AES-CBC**)
+- Salida cifrada en formato:
+  - `Base64(iv):Base64(ciphertext)`
 
 ---
 
 ### 5) Validación de certificados TLS/SSL
 
-Incluye un panel educativo con dos enfoques:
+Incluye dos enfoques:
 
-**A. Live Validation (validación “en vivo”)**
-- recibe `hostname` y `puerto`.
-- muestra un comando equivalente de OpenSSL del tipo:
+**A) Live Validation**
+- Entrada: hostname + puerto + opciones
+- Genera un comando OpenSSL sugerido:
   - `openssl s_client -connect host:port ...`
-- realiza pruebas desde el navegador para inferir si el certificado es confiable (limitado por políticas del navegador/CORS y el tipo de prueba).
+- Ejecuta pruebas desde el navegador para inferir confiabilidad/conectividad.
 
-**B. Chain Verification (verificación de cadena)**
-- permite pegar:
-  - certificado del servidor (PEM),
-  - cadena CA (PEM),
-  - hostname (opcional, para validar CN/SAN)
-- hace parsing **simplificado** de X.509 (educativo) y genera un reporte:
-  - fechas de validez,
-  - CN/SAN (heurístico),
-  - estructura básica de issuer/subject,
-  - recordatorio de comando OpenSSL real para verificación criptográfica completa.
+**B) Chain Verification**
+- Entrada:
+  - Certificado del servidor (PEM)
+  - Cadena CA (PEM)
+  - Hostname opcional para validar CN/SAN
+- Realiza parsing **simplificado** de X.509 con fines educativos (no reemplaza a un verificador criptográfico completo).
+- Emite un reporte y recomienda el comando de OpenSSL para verificación real.
 
 ---
 
-## Ejecución
+## Ejecución (cómo correrlo)
 
-Como es una app estática, tienes varias opciones:
+No necesitas instalar nada ni usar un servidor local.
 
-### Opción 1: Abrir el archivo directamente
-1. Clona el repo
-2. Abre `webapp/index.html` en tu navegador
+1. Clona o descarga este repositorio.
+2. Abre el archivo en tu navegador:
 
-### Opción 2: Servidor local (recomendado)
-Esto evita algunos problemas de permisos/origen en el navegador.
+- `webapp/index.html`
 
-Con Python:
-```bash
-cd webapp
-python -m http.server 8080
-```
-
-Luego abre:
-- http://localhost:8080
+> Recomendación: usar un navegador moderno (Chrome/Edge/Firefox) para asegurar compatibilidad con Web Crypto API.
 
 ---
 
 ## Estructura del repositorio
 
-- `webapp/index.html`: Aplicación completa (HTML + CSS + JS en un solo archivo)
-
-> Si el repo tiene más archivos además de `webapp/`, esta sección se puede extender.
+- `webapp/index.html` — aplicación completa (HTML + CSS + JavaScript)
 
 ---
 
-## Seguridad, alcance y limitaciones
+## Seguridad, privacidad y limitaciones
 
-- Proyecto con propósito **académico/educativo** (Maestría UTH), no orientado a producción.
-- Las operaciones criptográficas soportadas se ejecutan con **Web Crypto API**.
-- Algunos componentes (por ejemplo **ML-KEM / ML-DSA**) se muestran como **simulación/demostración** debido a limitaciones actuales del navegador.
-- La validación de certificados desde navegador no sustituye herramientas de auditoría completas:
-  - para verificación profunda se recomienda usar OpenSSL/SSL Labs y herramientas CLI.
+- **Privacidad:** la intención del proyecto es ejecutar operaciones localmente en el navegador (sin backend).
+- **Post-cuántico:** ML-KEM/ML-DSA están como **simulación/demostración**.
+- **Certificados:** la verificación desde navegador es limitada; para auditoría real usar OpenSSL/SSL Labs.
+- **Uso educativo:** no se recomienda para flujos de producción ni manejo de secretos reales.
 
 ---
 
-## Contribución (Maestría UTH)
+## Contribución (proyecto colaborativo UTH)
 
-Este es un **proyecto colaborativo** de la **Maestría en Ciberseguridad de la UTH**. Sugerencias para contribuir:
+Este repositorio forma parte de un **proyecto colaborativo** de la **Maestría en Ciberseguridad de la UTH**, por lo que las contribuciones son bienvenidas.
 
-1. Crear un **Issue** con:
-   - objetivo,
-   - descripción,
-   - criterios de aceptación,
-   - evidencia esperada (capturas o salida).
-2. Trabajar en una rama:
+Sugerencia de flujo:
+1. Crear un **Issue** con descripción y criterios de aceptación.
+2. Crear rama:
 ```bash
 git checkout -b feature/nombre-corto
 ```
-3. Abrir Pull Request para revisión por pares.
+3. Hacer commits claros y abrir **Pull Request** para revisión por pares.
 
 ---
+
 
 ## Créditos
 
-- Estudiantes colaboradores — **Maestría en Ciberseguridad (UTH)**
-- Grupo: “Grupo #2” (según el footer de la app)
+Proyecto colaborativo — **Maestría en Ciberseguridad, UTH**.
 
----
 
-## Licencia
-
-Pendiente de definir (agrega aquí MIT/Apache-2.0/GPL-3.0 u otra).

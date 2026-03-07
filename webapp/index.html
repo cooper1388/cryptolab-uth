@@ -626,7 +626,6 @@
 </head>
 
 <body>
-
   <header>
     <div class="header-logo">
       <!-- UTH Logo SVG (laurel wreath + UTH letters) -->
@@ -694,6 +693,59 @@
         <div class="panel-chevron">▲</div>
       </div>
       <div class="panel-body">
+
+        <!-- Educational Info Box -->
+        <div style="background:rgba(200,168,0,0.08);border:1px solid rgba(200,168,0,0.25);border-radius:5px;padding:12px;margin-bottom:14px;font-size:0.85rem;line-height:1.6">
+          <div style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px;display:flex;align-items:center;cursor:pointer" onclick="toggleHelp('help-keygen')">
+            <span id="help-keygen-icon" style="margin-right:8px;font-size:0.9em;transition:transform 0.2s">▶</span>
+            <span>ℹ️ KEY PAIR GENERATION - GENERACIÓN DE PAR DE CLAVES (click para ver ayuda)</span>
+          </div>
+          <div id="help-keygen" style="color:var(--text-dim);display:none;margin-top:8px">
+            Esta herramienta genera un <strong style="color:var(--text)">par de claves asimétricas</strong> (clave privada + clave pública derivada) usando <code style="background:#0a0a0a;padding:2px 6px;border-radius:3px">openssl genpkey</code>.
+            <br><br>
+            <strong style="color:var(--gold-light)">📝 Datos a Ingresar:</strong>
+            <br>
+            • <strong>Key Type:</strong> Algoritmo criptográfico a usar
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li><strong>RSA:</strong> Algoritmo clásico, ampliamente soportado, basado en factorización de números primos</li>
+              <li><strong>Elliptic Curves (EC):</strong> Curvas elípticas, más eficiente, claves más pequeñas con igual seguridad</li>
+            </ul>
+            • <strong>Key Length / Security Level:</strong> Tamaño de la clave en bits
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li><strong>2048 bits:</strong> Seguridad estándar para la mayoría de aplicaciones (mínimo recomendado)</li>
+              <li><strong>3072 bits:</strong> Seguridad alta, recomendado para datos sensibles</li>
+              <li><strong>4096 bits:</strong> Seguridad muy alta, usado en infraestructuras críticas (más lento)</li>
+              <li>⚠️ <em>A mayor tamaño, mayor seguridad pero menor rendimiento</em></li>
+            </ul>
+            • <strong>Output File Name:</strong> Nombre sugerido para guardar la clave (sin extensión)<br>
+            • <strong>Encrypt Private Key:</strong> Opción de proteger la clave privada con contraseña
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>Si activas esta opción, la clave se cifrará con AES/3DES</li>
+              <li>Requerirá passphrase cada vez que uses la clave privada</li>
+              <li><strong>Recomendado:</strong> Siempre encripta claves privadas en producción</li>
+            </ul>
+            <br>
+            <strong style="color:var(--gold-light)">🔐 ¿Para qué se usa?</strong>
+            <br>
+            • <strong>Identidad Digital:</strong> La clave privada es tu "identidad" en criptografía de clave pública<br>
+            • <strong>Firma Digital:</strong> Firmar documentos, código, emails (nadie más puede falsificar tu firma)<br>
+            • <strong>Certificados SSL/TLS:</strong> Base para generar CSR (Certificate Signing Request) y obtener certificados<br>
+            • <strong>SSH Authentication:</strong> Autenticación sin contraseña a servidores remotos<br>
+            • <strong>Cifrado Asimétrico:</strong> Otros pueden cifrar mensajes que solo tú puedes descifrar<br>
+            • <strong>PKI Infrastructure:</strong> Fundamento de toda infraestructura de clave pública
+            <br><br>
+            <strong style="color:var(--gold-light)">⚠️ Seguridad:</strong>
+            <br>
+            • <strong>NUNCA compartas tu clave privada</strong> — es como tu contraseña maestra<br>
+            • La clave pública derivada SÍ puede compartirse libremente<br>
+            • Guarda copias de respaldo seguras de tus claves privadas<br>
+            • En producción, siempre encripta la clave privada con passphrase<br>
+            • Si comprometes tu clave privada, revócala inmediatamente
+            <br><br>
+            <strong style="color:var(--gold-light)">⚡ Uso:</strong> Selecciona el tipo de algoritmo y tamaño de clave según tus necesidades de seguridad, opcionalmente protege con contraseña, y genera la clave. Después usa "Extract Public Key" para obtener la clave pública derivada.
+          </div>
+        </div>
+
         <div class="form-row">
           <div class="form-group full">
             <!-- KEY TYPE TABS -->
@@ -769,7 +821,6 @@
             <button class="copy-btn-overlay" onclick="copyText('keygen-output')">COPY</button>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -783,6 +834,46 @@
         <div class="panel-chevron">▼</div>
       </div>
       <div class="panel-body">
+
+        <!-- Educational Info Box -->
+        <div style="background:rgba(200,168,0,0.08);border:1px solid rgba(200,168,0,0.25);border-radius:5px;padding:12px;margin-bottom:14px;font-size:0.85rem;line-height:1.6">
+          <div style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px;display:flex;align-items:center;cursor:pointer" onclick="toggleHelp('help-extract-pubkey')">
+            <span id="help-extract-pubkey-icon" style="margin-right:8px;font-size:0.9em;transition:transform 0.2s">▶</span>
+            <span>ℹ️ EXTRACT PUBLIC KEY - EXTRACCIÓN DE CLAVE PÚBLICA (click para ver ayuda)</span>
+          </div>
+          <div id="help-extract-pubkey" style="color:var(--text-dim);display:none;margin-top:8px">
+            Esta herramienta <strong style="color:var(--text)">extrae la clave pública</strong> de una clave privada usando <code style="background:#0a0a0a;padding:2px 6px;border-radius:3px">openssl pkey -pubout</code>.
+            <br><br>
+            <strong style="color:var(--gold-light)">📝 Datos a Ingresar:</strong>
+            <br>
+            • <strong>Private Key (PEM):</strong> La clave privada en formato PEM (-----BEGIN PRIVATE KEY-----)
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>Puede ser RSA, EC (Elliptic Curve), o cualquier algoritmo asimétrico</li>
+              <li>Puede estar encriptada con passphrase o sin encriptar</li>
+              <li>Soporta formatos: PKCS#1, PKCS#8, SEC1</li>
+            </ul>
+            <br>
+            <strong style="color:var(--gold-light)">🔓 ¿Qué hace?</strong>
+            <br>
+            En criptografía asimétrica, cada par de claves tiene:
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li><strong>Clave Privada:</strong> Secreta, nunca se comparte, usada para firmar y descifrar</li>
+              <li><strong>Clave Pública:</strong> Derivada matemáticamente de la privada, se comparte libremente, usada para verificar firmas y cifrar</li>
+            </ul>
+            Esta herramienta realiza la <strong>derivación matemática</strong> para extraer la parte pública de tu clave privada.
+            <br><br>
+            <strong style="color:var(--gold-light)">🔑 ¿Para qué se usa la clave pública?</strong>
+            <br>
+            • <strong>Distribución segura:</strong> Puedes compartir tu clave pública libremente sin comprometer seguridad<br>
+            • <strong>Verificación de firmas:</strong> Otros pueden verificar que TÚ firmaste un documento/mensaje<br>
+            • <strong>Cifrado hacia ti:</strong> Otros pueden cifrar mensajes que solo TÚ puedes descifrar con tu clave privada<br>
+            • <strong>Certificados SSL/TLS:</strong> La clave pública se incluye en el CSR y certificado<br>
+            • <strong>SSH authorized_keys:</strong> Añadir tu clave pública a servidores remotos para autenticación<br>
+            • <strong>PKI/CA:</strong> Las CAs usan tu clave pública para firmar tu certificado
+            <br><br>
+            <strong style="color:var(--gold-light)">⚡ Uso:</strong> Pega tu clave privada (puede ser la que generaste arriba), haz clic en "Extract", y obtendrás la clave pública derivada que puedes compartir con otros.
+          </div>
+        </div>
 
         <div class="form-row">
           <div class="form-group full">
@@ -822,6 +913,75 @@
         <div class="panel-chevron">▼</div>
       </div>
       <div class="panel-body">
+
+        <!-- Educational Info Box -->
+        <div style="background:rgba(200,168,0,0.08);border:1px solid rgba(200,168,0,0.25);border-radius:5px;padding:12px;margin-bottom:14px;font-size:0.85rem;line-height:1.6">
+          <div style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px;display:flex;align-items:center;cursor:pointer" onclick="toggleHelp('help-certificate')">
+            <span id="help-certificate-icon" style="margin-right:8px;font-size:0.9em;transition:transform 0.2s">▶</span>
+            <span>ℹ️ CERTIFICATE GENERATION - GENERACIÓN DE CERTIFICADOS (click para ver ayuda)</span>
+          </div>
+          <div id="help-certificate" style="color:var(--text-dim);display:none;margin-top:8px">
+            Esta herramienta te permite <strong style="color:var(--text)">generar certificados digitales X.509</strong> y convertir entre formatos PEM/PFX.
+            <br><br>
+            <strong style="color:var(--gold-light)">📝 Tipos de Certificado:</strong>
+            <br>
+            • <strong>CSR (Certificate Signing Request):</strong>
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>Solicitud de certificado que envías a una CA (Certificate Authority)</li>
+              <li>Contiene tu clave pública + información de identidad (CN, O, OU, etc.)</li>
+              <li>La CA verifica tu identidad y firma tu CSR, creando un certificado confiable</li>
+              <li><strong>Uso:</strong> Producción, certificados públicos confiables (Let's Encrypt, DigiCert, etc.)</li>
+            </ul>
+            • <strong>Self-Signed (Autofirmado):</strong>
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>Certificado firmado por ti mismo, no por una CA externa</li>
+              <li>No es confiable automáticamente por navegadores/sistemas operativos</li>
+              <li>Genera advertencias de seguridad en navegadores</li>
+              <li><strong>Uso:</strong> Desarrollo local, testing, intranets, educación, CA interna</li>
+            </ul>
+            <br>
+            <strong style="color:var(--gold-light)">🏢 Campos del Distinguished Name (DN):</strong>
+            <br>
+            • <strong>CN (Common Name):</strong> El dominio principal (ej: www.ejemplo.com, *.ejemplo.com)
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>CRÍTICO: Debe coincidir exactamente con el dominio del servidor</li>
+              <li>Puede usar wildcards: *.ejemplo.com valida sub1.ejemplo.com, sub2.ejemplo.com, etc.</li>
+            </ul>
+            • <strong>O (Organization):</strong> Nombre legal de tu organización/empresa<br>
+            • <strong>OU (Organizational Unit):</strong> Departamento o división (ej: IT, Engineering, Security)<br>
+            • <strong>Email:</strong> Correo de contacto del responsable<br>
+            • <strong>C (Country):</strong> Código ISO de 2 letras del país (HN, US, ES, MX, etc.)<br>
+            • <strong>ST (State/Province):</strong> Estado o provincia<br>
+            • <strong>L (Locality):</strong> Ciudad o localidad<br>
+            <br>
+            <strong style="color:var(--gold-light)">📦 Formatos de Salida:</strong>
+            <br>
+            • <strong>PEM (Privacy Enhanced Mail):</strong>
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>Formato texto base64: -----BEGIN CERTIFICATE-----</li>
+              <li>Usado en Linux/Unix, Apache, Nginx, OpenSSL</li>
+              <li>Archivos separados: .key (privada), .crt/.pem (certificado), .csr (request)</li>
+            </ul>
+            • <strong>PFX/PKCS#12 (Personal Information Exchange):</strong>
+            <ul style="margin:4px 0 4px 20px;color:var(--text-dim)">
+              <li>Formato binario que empaqueta: clave privada + certificado + cadena CA</li>
+              <li>Protegido con contraseña (requerido)</li>
+              <li>Usado en Windows, IIS, aplicaciones .NET, Java KeyStore</li>
+              <li>Extensiones: .pfx, .p12</li>
+            </ul>
+            <br>
+            <strong style="color:var(--gold-light)">🔐 ¿Para qué se usa?</strong>
+            <br>
+            • <strong>HTTPS/SSL/TLS:</strong> Cifrar conexiones web, autenticar servidor<br>
+            • <strong>Firma de Código:</strong> Firmar aplicaciones, scripts, drivers<br>
+            • <strong>Email S/MIME:</strong> Firmar/cifrar correos electrónicos<br>
+            • <strong>VPN/IPSec:</strong> Autenticación de túneles VPN<br>
+            • <strong>mTLS:</strong> Autenticación mutua cliente-servidor<br>
+            • <strong>Document Signing:</strong> Firmas digitales en PDFs, contratos
+            <br><br>
+            <strong style="color:var(--gold-light)">⚡ Uso:</strong> Selecciona tipo (CSR o Self-Signed), formato de salida (PEM o PFX), completa los campos de identidad, y genera. Para producción usa CSR y envíalo a una CA. Para desarrollo/testing usa Self-Signed.
+          </div>
+        </div>
 
         <div class="inner-tabs">
           <button class="inner-tab active" onclick="switchInner('sign','new-tab')">Nuevo Certificado</button>
@@ -1164,9 +1324,7 @@
                 intermedios/CA, aparecerán aquí.</div>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
 
@@ -1194,10 +1352,11 @@
           <div
             style="background:rgba(200,168,0,0.08);border:1px solid rgba(200,168,0,0.25);border-radius:5px;padding:12px;margin-bottom:14px;font-size:0.85rem;line-height:1.6">
             <div
-              style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px">
-              ℹ️ LIVE CERTIFICATE VALIDATION - VALIDACIÓN EN TIEMPO REAL
+              style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px;display:flex;align-items:center;cursor:pointer" onclick="toggleHelp('help-live-validation')">
+              <span id="help-live-validation-icon" style="margin-right:8px;font-size:0.9em;transition:transform 0.2s">▶</span>
+              <span>ℹ️ LIVE CERTIFICATE VALIDATION - VALIDACIÓN EN TIEMPO REAL (click para ver ayuda)</span>
             </div>
-            <div style="color:var(--text-dim)">
+            <div id="help-live-validation" style="color:var(--text-dim);display:none;margin-top:8px">
               Esta herramienta te permite <strong style="color:var(--text)">conectarte a un servidor real</strong> y
               extraer su certificado SSL/TLS en tiempo real usando <code
                 style="background:#0a0a0a;padding:2px 6px;border-radius:3px">openssl s_client</code>.
@@ -1287,10 +1446,11 @@
           <div
             style="background:rgba(200,168,0,0.08);border:1px solid rgba(200,168,0,0.25);border-radius:5px;padding:12px;margin-bottom:14px;font-size:0.85rem;line-height:1.6">
             <div
-              style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px">
-              ℹ️ UNDERSTANDING CERTIFICATE VALIDATION - DOS TIPOS DE VALIDACIÓN
+              style="font-weight:700;color:var(--gold-light);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:0.5px;display:flex;align-items:center;cursor:pointer" onclick="toggleHelp('help-chain-validation')">
+              <span id="help-chain-validation-icon" style="margin-right:8px;font-size:0.9em;transition:transform 0.2s">▶</span>
+              <span>ℹ️ UNDERSTANDING CERTIFICATE VALIDATION - DOS TIPOS DE VALIDACIÓN (click para ver ayuda)</span>
             </div>
-            <div style="color:var(--text-dim)">
+            <div id="help-chain-validation" style="color:var(--text-dim);display:none;margin-top:8px">
               La validación de certificados SSL/TLS tiene <strong style="color:var(--text)">DOS capas de seguridad
                 separadas</strong> que los navegadores verifican:
               <br><br>
@@ -1390,16 +1550,13 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
               <button class="copy-btn-overlay" onclick="copyText('verify-output')">COPY</button>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
-
   </main>
 
   <footer>
-    <p>UTH CryptoLab &mdash; <span>Universidad Tecnológica de Honduras</span> &mdash; Powered by Web Crypto API</p>
+    <p>UTH CryptoLab &mdash; <span><a href="https://www.uth.hn" target="_blank"><span></span>Universidad Tecnológica de Honduras</span></a></span> &mdash; Powered by <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API" target="_blank">Web Crypto API</a></p>
     <p style="margin-top:6px;opacity:0.5">All operations run locally in your
       browser &bull; No data leaves your device</p>
     <p style="margin-top:6px;opacity:0.5">Maestria en Ciberseguridad &bull; Grupo # 2</p>
@@ -1410,6 +1567,19 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
     let currentKeyType = 'RSA';
     let generatedPrivateKey = null;
     let generatedPublicKey = null;
+
+    // ================= TOGGLE HELP =================
+    function toggleHelp(helpId) {
+      const helpContent = document.getElementById(helpId);
+      const toggleIcon = document.getElementById(helpId + '-icon');
+      if (helpContent.style.display === 'none' || helpContent.style.display === '') {
+        helpContent.style.display = 'block';
+        toggleIcon.textContent = '▼';
+      } else {
+        helpContent.style.display = 'none';
+        toggleIcon.textContent = '▶';
+      }
+    }
 
     // ================= KEY TYPE =================
     function setKeyType(btn, type) {
@@ -3092,8 +3262,6 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       pfxB64: ''
     };
 
-
-
     function pem2pfx_sanitizeFilename(name, fallback) {
       const v = (name || '').trim() || (fallback || 'file.pem');
       return v.replace(/[^\w.\-]+/g, '_');
@@ -3320,15 +3488,13 @@ MIIDXTCCAkWgAwIBAgIJAKZ...
       }
     }
 
-
-
     // Auto-init (no rompe tu listener existente)
     window.addEventListener('DOMContentLoaded', () => cert_init());
-
 
     function sanitizeFilename(name) {
       return String(name || '').trim().replace(/[^\w.-]+/g, '_') || 'output.pem';
     }
+
     function downloadTextFile(filename, content) {
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
