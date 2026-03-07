@@ -1,4 +1,4 @@
-# CryptoLab UTH
+# CipherStudio UTH
 
 Aplicación web educativa para **criptografía aplicada** que funciona **100% en el navegador** (sin servidor), desarrollada como **proyecto colaborativo** de la **Maestría en Ciberseguridad de la UTH (Universidad Tecnológica de Honduras)**.
 
